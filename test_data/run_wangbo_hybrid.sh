@@ -1,4 +1,4 @@
-run_dir="/data/CrazyHsu_data/Projects/isoseq/iFLAS"
+run_dir="/data/CrazyHsu_data/Projects/isoseq/iFLAS_20220704"
 python ${run_dir}/iflas.py preproc -cfg ${run_dir}/test_data/test_pacbio_wangbo_hybrid.cfg
 python ${run_dir}/iflas.py mapping -cfg ${run_dir}/test_data/test_pacbio_wangbo_hybrid.cfg -jcs 2
 python ${run_dir}/iflas.py collapse -cfg ${run_dir}/test_data/test_pacbio_wangbo_hybrid.cfg
