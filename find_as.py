@@ -206,7 +206,7 @@ def findIR(gene2ReadsDict, outAS=None, out=None, anno=True, offset=0, isoform2re
         gene2ReadsDict[gName].asDict.update({"IR": newIrDict})
 
 
-def findSE(gene2ReadsDict, outAS=None, out=None, anno=True, offset=0, isoform2reads=None):
+def findSE(gene2ReadsDict, outAS=None, out=None, anno=True, offset=0, isoform2reads=None, restrict=False):
     for gName in gene2ReadsDict:
         readsDict = gene2ReadsDict[gName].reads
         chrom = gene2ReadsDict[gName].chrom
@@ -293,7 +293,7 @@ def findSE(gene2ReadsDict, outAS=None, out=None, anno=True, offset=0, isoform2re
         gene2ReadsDict[gName].asDict.update({"SE": newExonDict})
 
 
-def findA3SS(gene2ReadsDict, outAS=None, out=None, anno=True, offset=0, isoform2reads=None):
+def findA3SS(gene2ReadsDict, outAS=None, out=None, anno=True, offset=0, isoform2reads=None, restrict=False):
     for gName in gene2ReadsDict:
         readsDict = gene2ReadsDict[gName].reads
         chrom = gene2ReadsDict[gName].chrom
@@ -394,7 +394,7 @@ def findA3SS(gene2ReadsDict, outAS=None, out=None, anno=True, offset=0, isoform2
         gene2ReadsDict[gName].asDict.update({"A3SS": altDict})
 
 
-def findA5SS(gene2ReadsDict, outAS=None, out=None, anno=True, offset=0, isoform2reads=None):
+def findA5SS(gene2ReadsDict, outAS=None, out=None, anno=True, offset=0, isoform2reads=None, restrict=False):
     for gName in gene2ReadsDict:
         readsDict = gene2ReadsDict[gName].reads
         chrom = gene2ReadsDict[gName].chrom
@@ -561,7 +561,8 @@ def find_all_as(dataObj=None, refParams=None, dirSpec=None):
     scriptDir = os.path.dirname(os.path.abspath(__file__))
     utilDir = os.path.join(scriptDir, "utils")
     resolveDir(workDir)
-    isoformBed = os.path.join(baseDir, "refine", "isoformGrouped.bed12+")
+    # isoformBed = os.path.join(baseDir, "refine", "isoformGrouped.bed12+")
+    isoformBed = os.path.join(baseDir, "hqIsoforms", "hq.collapsed.bed12+")
     tofuGroupFile = os.path.join(baseDir, "collapse", "tofu.collapsed.group.txt")
     if dataObj.ngs_junctions == None and (dataObj.ngs_left_reads or dataObj.ngs_right_reads):
         dataObj.ngs_junctions = os.path.join(baseDir, "mapping", "rna-seq", "reassembly", "junctions.bed")
@@ -572,14 +573,16 @@ def find_all_as(dataObj=None, refParams=None, dirSpec=None):
     transBedList = GenePredObj(refParams.ref_gpe, bincolumn=False).toBed(gene=True)
     transBedObj = pybedtools.BedTool("\n".join(transBedList), from_string=True)
     readsBedList = []
+    tmpReads = {}
     isoform2reads = {}
     with open(tofuGroupFile) as f:
         for line in f.readlines():
             isoform, reads = line.strip("\n").split("\t")
-            isoform2reads[isoform] = reads.split(",")
+            tmpReads[isoform] = reads.split(",")
     with open(isoformBed) as f:
         for line in f.readlines():
-            readStruc = Bed12(line)
+            readStruc = Bed12Plus(line)
+            isoform2reads[readStruc.name] = list(itertools.chain.from_iterable([tmpReads[i] for i in readStruc.otherList[2].split(",")]))
             if len(isoform2reads[readStruc.name]) < 2: continue
             readsBedList.append("\t".join(readStruc.record[:12]))
 

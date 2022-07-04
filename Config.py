@@ -14,13 +14,16 @@ REF_SECTION = "refSection"
 CCS_PARAMS_SECTION = "ccsCalling"
 MINIMAP2_SECTION = "minimap2"
 COLLAPSE_SECTION = "collapse"
+HQISO_FILTER_SECTION = "hqIsoFilter"
 DATA_CFG_SECTION = "dataCfg"
 OPTION_SECTION = "optionTools"
 BUILDIN_SECTION = "buildInTools"
 DIR_SECTION = "dirs"
 
-SECTION_TYPE_LIST = [i.lower() for i in REF_SECTION, CCS_PARAMS_SECTION, DATA_CFG_SECTION, OPTION_SECTION,
-                                        BUILDIN_SECTION, DIR_SECTION, MINIMAP2_SECTION, COLLAPSE_SECTION]
+SECTION_TYPE_LIST_ORIGIN = [REF_SECTION, CCS_PARAMS_SECTION, DATA_CFG_SECTION, OPTION_SECTION,
+                            BUILDIN_SECTION, DIR_SECTION, MINIMAP2_SECTION, COLLAPSE_SECTION, HQISO_FILTER_SECTION]
+
+SECTION_TYPE_LIST_LOWER = [i.lower() for i in SECTION_TYPE_LIST_ORIGIN]
 
 SECTIONTYPE = "section_type"
 REFSTRAIN = "ref_strain"
@@ -42,6 +45,9 @@ DATA_TAGS = [PROJECTNAME, SAMPLENAME, STRAIN, CONDITION, TGSPLAT, STRATEGY, DATA
        "kit_type"]
 COLLAPSE_TAGS = [MINIDENTITY, MINCOVERAGE, FLCOVERAGE, MAXFUZZYJUNCTION, MAX5DIFF, MAX3DIFF, DUNMERGE5SHORTER] \
     = ["min_identity", "min_coverage", "fl_coverage", "max_fuzzy_junction", "max_5_diff", "max_3_diff", "dun_merge_5_shorter"]
+HQISO_FILTER_TAGS = [FILTERSCORE, DRAWAUC, POSFLCOVERAGE, POSMINJUNCRPKM] \
+    = ["filter_score", "draw_auc", "pos_fl_coverage", "pos_min_junc_rpkm"]
+
 OPTION_TAGS = [THREADS, MEMORY, GENE2GO, MERGEDATAFROMSAMESTRAIN] \
     = ["threads", "memory", "gene2go", "merge_data_from_same_strain"]
 BUILDIN_TAGS = [PYTHON, R, BASH] \
@@ -54,12 +60,13 @@ DATA_TAGS = [SECTIONTYPE, REFSTRAIN] + DATA_TAGS
 CCS_TAGS = [SECTIONTYPE] + CCS_TAGS
 MINIMAP2_TAGS = [SECTIONTYPE] + MINIMAP2_TAGS
 COLLAPSE_TAGS = [SECTIONTYPE] + COLLAPSE_TAGS
+HQISO_FILTER_TAGS = [SECTIONTYPE] + HQISO_FILTER_TAGS
 OPTION_TAGS = [SECTIONTYPE] + OPTION_TAGS
 BUILDIN_TAGS = [SECTIONTYPE] + BUILDIN_TAGS
 DIR_TAGS = [SECTIONTYPE] + DIR_TAGS
-VALID_TAGS = [SECTIONTYPE] + REF_TAGS + CCS_TAGS + DATA_TAGS + MINIMAP2_TAGS + COLLAPSE_TAGS + OPTION_TAGS + BUILDIN_TAGS + DIR_TAGS
+VALID_TAGS = [SECTIONTYPE] + REF_TAGS + CCS_TAGS + DATA_TAGS + MINIMAP2_TAGS + COLLAPSE_TAGS + HQISO_FILTER_TAGS + OPTION_TAGS + BUILDIN_TAGS + DIR_TAGS
 
-BOOLEAN_TAGS = [USEFMLRC2, DUNMERGE5SHORTER, MERGEDATAFROMSAMESTRAIN, DUNMERGE5SHORTER]
+BOOLEAN_TAGS = [USEFMLRC2, DUNMERGE5SHORTER, MERGEDATAFROMSAMESTRAIN, DUNMERGE5SHORTER, DRAWAUC]
 FLOAT_TAGS = [CCSMINREADSCORE, CCSMINPREDICTEDACCURACY, MINIDENTITY, MINCOVERAGE]
 INTEGER_TAGS = [CCSMINREADLENGTH, CCSMINSUBREADLENGTH, CCSMINCCSLENGTH, CCSMINPASS, FLCOVERAGE, MAXFUZZYJUNCTION,
                 MAX5DIFF, MAX3DIFF, MAXINTRONLENGTH, THREADS, SINGLERUNTHREADS, NGSREADSLENGTH, NGSLIBRARYSTRAND]
@@ -123,6 +130,23 @@ class CollapseSection(object):
     def __setattr__(self, key, value):
         if key != "section_type" and key not in COLLAPSE_TAGS:
             raise ValueError("Unrecognized %s tag in section %s" % (key, COLLAPSE_SECTION))
+        self.__dict__[key] = value
+
+    def __str__(self):
+        keys = sorted(self.__dict__.keys())
+        return ','.join(['%s=%s' % (x, str(self.__dict__[x])) for x in keys])
+
+class HqIsoFilter(object):
+    def __init__(self, type):
+        self.section_type = type
+        self.filter_score = 0.5
+        self.draw_auc = True
+        self.pos_fl_coverage = 2
+        self.pos_min_junc_rpkm = 0.05
+
+    def __setattr__(self, key, value):
+        if key != "section_type" and key not in HQISO_FILTER_TAGS:
+            raise ValueError("Unrecognized %s tag in section %s" % (key, HQISO_FILTER_SECTION))
         self.__dict__[key] = value
 
     def __str__(self):
@@ -248,11 +272,18 @@ class Dirs(object):
         return ','.join(['%s=%s' % (x, str(self.__dict__[x])) for x in keys])
 
 
+CLASS_LIST = [RefSection, CcsCalling, DataCfg, OptionSection, BuildInTools, Dirs, Minimap2Section,
+              CollapseSection, HqIsoFilter]
+
+SEC2CLASS = dict(zip(SECTION_TYPE_LIST_ORIGIN, CLASS_LIST))
+
+
 class Config(object):
     refInfoParams = {}
     ccsParams = None
     minimap2Params = None
     collapseParams = None
+    hqIsoParams = None
     dataToProcess = []
     optionTools = None
     buildInTools = None
@@ -298,11 +329,16 @@ class Config(object):
 
     def instantiate(self):
         """Instantiates all objects related to the configuration."""
+        self.sectiontypes = []
+        sec2params = dict(zip(SECTION_TYPE_LIST_ORIGIN, ["refInfoParams", "ccsParams", "dataToProcess",
+                                                         "optionTools", "buildInTools", "dirParams",
+                                                         "minimap2Params", "collapseParams", "hqIsoParams"]))
         for sec in self.getIds():
             sectionType = self.getValue(sec, "section_type")
-            if sectionType.lower() not in SECTION_TYPE_LIST:
-                raise ValueError("The section type %s in %s isn't in %s" % (sectionType, sec, ",".join(SECTION_TYPE_LIST)))
+            if sectionType.lower() not in SECTION_TYPE_LIST_LOWER:
+                raise ValueError("The section type %s in %s isn't in %s" % (sectionType, sec, ",".join(SECTION_TYPE_LIST_LOWER)))
 
+            self.sectiontypes.append(sectionType)
             if sectionType.lower() == REF_SECTION.lower():
                 s = RefSection(sectionType)
                 for o in self.config.options(sec):
@@ -333,6 +369,12 @@ class Config(object):
                     s.__dict__[o] = self.getValue(sec, o)
                 self.collapseParams = s
 
+            if sectionType.lower() == HQISO_FILTER_SECTION.lower():
+                s = HqIsoFilter(sectionType)
+                for o in self.config.options(sec):
+                    s.__dict__[o] = self.getValue(sec, o)
+                self.hqIsoParams = s
+
             if sectionType.lower() == OPTION_SECTION.lower():
                 s = OptionSection(sectionType)
                 for o in self.config.options(sec):
@@ -344,6 +386,11 @@ class Config(object):
                 for o in self.config.options(sec):
                     s.__dict__[o] = self.getValue(sec, o)
                 self.dirParams = s
+
+        for sec in set(SECTION_TYPE_LIST_ORIGIN) - set(self.sectiontypes):
+            secName = sec2params[sec]
+            s = SEC2CLASS[sec](sec)
+            setattr(self, secName, s)
 
     def validate(self):
 

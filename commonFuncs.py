@@ -8,7 +8,7 @@ Last modified: 2022-01-18
 '''
 
 import os, re, datetime, psutil, subprocess
-import pysam
+import pysam, pybedtools
 from Bio import SeqIO
 
 AStypes = ["IR", "SE", "A3SS", "A5SS"]
@@ -342,6 +342,49 @@ def getConsensusIntronN(exonStarts1, exonEnds1, exonStarts2, exonEnds2, offset):
                 consensusN += 1
                 j += 1
     return consensusN
+
+
+def getSpliceMotifFromJuncDict(juncDict, genomeFasta, withStrand=False):
+    dinucleotideBedList = []
+    for juncName in juncDict:
+        juncBed = juncDict[juncName]
+        chrom = juncBed.split("\t")[0]
+        juncStart = int(juncBed.split("\t")[1])
+        juncEnd = int(juncBed.split("\t")[2])
+        strand = juncBed.split("\t")[-1]
+        leftDinucleotidePos = "\t".join(map(str, [chrom, juncStart, juncStart + 2, ":".join([juncName, "left"]), ".", strand]))
+        rightDinucleotidePos = "\t".join(map(str, [chrom, juncEnd - 2, juncEnd, ":".join([juncName, "right"]), ".", strand]))
+        dinucleotideBedList.extend([leftDinucleotidePos, rightDinucleotidePos])
+    dinucleotideBedObj = pybedtools.BedTool("\n".join(dinucleotideBedList), from_string=True)
+    dinucleotideBedRes = dinucleotideBedObj.sequence(genomeFasta, name=True, tab=True, s=True)
+
+    juncMotifDict = {}
+    for i in str(open(dinucleotideBedRes.seqfn).read()).split("\n")[:-1]:
+        infoList = str(i).strip("\n").split("\t")
+        strand = infoList[0][infoList[0].find("(") + 1:infoList[0].find(")")]
+        if not withStrand:
+            juncName = "{}:{}".format(":".join(infoList[0].split(":")[:2]), strand)
+            dinucleotideType = infoList[0].split(":")[2]
+        else:
+            juncName = ":".join(infoList[0].split(":")[:3])
+            dinucleotideType = infoList[0].split(":")[3]
+
+        if juncName not in juncMotifDict:
+            juncMotifDict.update({juncName: {dinucleotideType: infoList[1]}})
+        else:
+            juncMotifDict[juncName].update({dinucleotideType: infoList[1]})
+
+    junc2motif = {}
+    for juncName in juncMotifDict:
+        strand = juncName.split(":")[-1]
+        if strand == "+":
+            spliceMotif = "{}-{}".format(juncMotifDict[juncName]["left"], juncMotifDict[juncName]["right"])
+        else:
+            spliceMotif = "{}-{}".format(juncMotifDict[juncName]["right"], juncMotifDict[juncName]["left"])
+        if juncName not in junc2motif:
+            junc2motif[juncName] = spliceMotif
+
+    return junc2motif
 
 
 def getCurrentTime():

@@ -9,7 +9,7 @@ Last modified: 2022-01-18
 
 from sys import maxint as MAXINT
 from multiprocessing import Pool
-import multiprocessing
+import multiprocessing, pybedtools
 import multiprocessing.pool
 
 AStypes = ["IR", "SE", "A3SS", "A5SS"]
@@ -154,6 +154,12 @@ class Bed12(object):
             ed = self.exonStarts[i + 1]
             introns.append((st, ed))
         return introns
+
+    def get_all_exons_len(self):
+        return sum(map(lambda x: int(x[1]) - int(x[0]), self.exons))
+
+    def get_all_introns_len(self):
+        return sum(map(lambda x: int(x[1]) - int(x[0]), self.introns))
 
     def utr_5_len(self):
         "return the length of 5'UTR"
@@ -315,6 +321,108 @@ class BedFile(object):
 
             return genePos
 
+    def getJuncChainDict(self):
+        juncChainDict = {}
+        annoSingleExonList = []
+        for i in self.reads:
+            if len(self.reads[i].exons) > 1:
+                juncChainInfo = "{}:{}".format(self.reads[i].chrom, self.reads[i].juncChain)
+                if juncChainInfo not in juncChainDict:
+                    juncChainDict[juncChainInfo] = self.reads[i]
+            # else:
+            #     singleExon = "\t".join([self.reads[i].chrom, self.reads[i].chromStart, self.reads[i].chromEnd, self.reads[i].name, ".", self.reads[i].strand])
+            #     annoSingleExonList.append(singleExon)
+        # return juncDict, annoSingleExonList
+        return juncChainDict
+
+    def getAllJuncDict(self, onebase=True, withStrand=False):
+        allJuncDict = {}
+        for i in self.reads:
+            if len(self.reads[i].exons) > 1:
+                for junc in self.reads[i].introns:
+                    if onebase:
+                        juncName = "{}:{}-{}".format(self.reads[i].chrom, junc[0] + 1, junc[1])
+                    else:
+                        juncName = "{}:{}-{}".format(self.reads[i].chrom, junc[0], junc[1])
+                    if withStrand:
+                        juncName = "{}:{}".format(juncName, self.reads[i].strand)
+                    if juncName not in allJuncDict:
+                        allJuncDict[juncName] = "\t".join(map(str, [self.reads[i].chrom, junc[0], junc[1], juncName, self.reads[i].score, self.reads[i].strand]))
+        return allJuncDict
+
+    def getAllExonDict(self):
+        allExonDict = {}
+        for i in self.reads:
+            for exon in self.reads[i].exons:
+                exonName = "{}:{}-{}".format(self.reads[i].chrom, exon[0], exon[1])
+                if exonName not in allExonDict:
+                    allExonDict[exonName] = "\t".join(map(str, [self.reads[i].chrom, exon[0], exon[1], exonName, self.reads[i].score, self.reads[i].strand]))
+        return allExonDict
+
+    def getJunc2trans(self, onebase=True, withStrand=False):
+        junc2trans = {}
+        for i in self.reads:
+            if len(self.reads[i].exons) > 1:
+                for junc in self.reads[i].introns:
+                    if onebase:
+                        juncName = "{}:{}-{}".format(self.reads[i].chrom, junc[0] + 1, junc[1])
+                    else:
+                        juncName = "{}:{}-{}".format(self.reads[i].chrom, junc[0], junc[1])
+                    if withStrand:
+                        juncName = "{}:{}".format(juncName, self.reads[i].strand)
+                    if juncName not in junc2trans:
+                        junc2trans[juncName] = [self.reads[i].name]
+                    else:
+                        junc2trans[juncName].append(self.reads[i].name)
+        return junc2trans
+
+
+    def getSpliceMotif(self, genomeFasta=None, withStrand=False):
+        dinucleotideBedList = []
+        for i in self.reads:
+            bedObj = self.reads[i]
+            for j in bedObj.juncChain.split(":")[1].split(";"):
+                chrom = bedObj.chrom
+                strand = bedObj.strand
+                juncStart, juncEnd = map(int, j.split("-"))
+                if not withStrand:
+                    juncName = "{}:{}-{}".format(chrom, juncStart + 1, juncEnd)
+                else:
+                    juncName = "{}:{}-{}:{}".format(chrom, juncStart + 1, juncEnd, strand)
+                leftDinucleotidePos = "\t".join(map(str, [chrom, juncStart, juncStart + 2, ":".join([juncName, "left"]), ".", strand]))
+                rightDinucleotidePos = "\t".join(map(str, [chrom, juncEnd - 2, juncEnd, ":".join([juncName, "right"]), ".", strand]))
+                dinucleotideBedList.extend([leftDinucleotidePos, rightDinucleotidePos])
+        dinucleotideBedObj = pybedtools.BedTool("\n".join(dinucleotideBedList), from_string=True)
+        dinucleotideBedRes = dinucleotideBedObj.sequence(genomeFasta, name=True, tab=True, s=True)
+
+        juncMotifDict = {}
+        for i in str(open(dinucleotideBedRes.seqfn).read()).split("\n")[:-1]:
+            infoList = str(i).strip("\n").split("\t")
+            # s[s.find("(") + 1:s.find(")")]
+            strand = infoList[0][infoList[0].find("(") + 1:infoList[0].find(")")]
+            if not withStrand:
+                juncName = "{}:{}".format(":".join(infoList[0].split(":")[:2]), strand)
+                dinucleotideType = infoList[0].split(":")[2]
+            else:
+                juncName = ":".join(infoList[0].split(":")[:3])
+                dinucleotideType = infoList[0].split(":")[3]
+
+            if juncName not in juncMotifDict:
+                juncMotifDict.update({juncName: {dinucleotideType: infoList[1]}})
+            else:
+                juncMotifDict[juncName].update({dinucleotideType: infoList[1]})
+
+        junc2motif = {}
+        for juncName in juncMotifDict:
+            strand = juncName.split(":")[-1]
+            if strand == "+":
+                spliceMotif = "{}-{}".format(juncMotifDict[juncName]["left"], juncMotifDict[juncName]["right"])
+            else:
+                spliceMotif = "{}-{}".format(juncMotifDict[juncName]["right"], juncMotifDict[juncName]["left"])
+            if juncName not in junc2motif:
+                junc2motif[juncName] = spliceMotif
+
+        return junc2motif
 
 class Gene2Reads(object):
     def __init__(self, geneName):

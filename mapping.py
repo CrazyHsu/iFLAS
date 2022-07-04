@@ -69,12 +69,12 @@ def getJuncFromRegtools(dataObj=None, dirSpec=None, filterByCount=10):
     logDir = os.path.join(baseDir, "log")
     resolveDir(logDir, chdir=False)
     rnaseqSortedBam = os.path.join(baseDir, "mapping", "rna-seq", "reassembly", "tmp.bam")
-    cmd = "regtools junctions extract -a 5 -m 50 -M 50000 {} -s 0 -o tmp.bed 2>{}/regtools.log".format(rnaseqSortedBam, logDir)
+    cmd = "regtools junctions extract -a 5 -m 50 -M 50000 {} -s 0 -o junctions.raw.bed 2>{}/regtools.log".format(rnaseqSortedBam, logDir)
     subprocess.call(cmd, shell=True)
-    cmd = '''awk '{if($5>%d){print}}' tmp.bed > junctions.bed''' % (filterByCount)
+    cmd = '''awk '{if($5>%d){print}}' junctions.raw.bed > junctions.bed''' % (filterByCount)
     subprocess.call(cmd, shell=True, executable="/bin/bash")
     dataObj.ngs_junctions = os.path.join(os.getcwd(), "junctions.bed")
-    removeFiles(os.getcwd(), ["tmp.bed"])
+    # removeFiles(os.getcwd(), ["tmp.bed"])
     print getCurrentTime() + " Get junctions from RNA-seq with Regtools for project {} sample {} done!".format(projectName, sampleName)
 
 

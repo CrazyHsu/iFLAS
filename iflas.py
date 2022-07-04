@@ -14,7 +14,7 @@ import pybedtools
 from commonObjs import *
 from Config import *
 
-def splitCommandRun(args, dataToProcess, refInfoParams, dirSpec, ccsParams, minimap2Params, collapseParams, optionTools):
+def splitCommandRun(args, dataToProcess, refInfoParams, dirSpec, ccsParams, minimap2Params, collapseParams, hqIsoParams, optionTools):
     if args.command == 'preproc':
         pool = MyPool(processes=len(dataToProcess))
         from preprocess import preprocess
@@ -57,25 +57,34 @@ def splitCommandRun(args, dataToProcess, refInfoParams, dirSpec, ccsParams, mini
                     if args.command == 'refine':
                         from refine import refineJunc
                         pool.apply_async(refineJunc, (dataObj, refParams, dirSpec, args.refine, args.adjust))
+                    if args.command == 'filter_lq_iso':
+                        from iso_pu import iso_pu1
+                        pool.apply_async(iso_pu1, (dataObj, refParams, dirSpec, hqIsoParams))
                     if args.command == 'find_as':
                         # from find_charaterize_as_functions import *
                         from identify_as import identify_as
                         # identify_as(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)
-                        pool.apply_async(identify_as, (dataObj, refParams, dirSpec, args))
+                        pool.apply_async(identify_as, (dataObj, refParams, dirSpec, hqIsoParams, args))
                     if args.command == 'visual_as':
                         from visual_as import visual_as
                         targetGenes = args.genes
                         # visual_as(dataObj=dataObj, targetGenes=targetGenes, refParams=refParams, dirSpec=dirSpec)
                         pool.apply_async(visual_as, (dataObj, targetGenes, refParams, dirSpec))
-                    if args.command == 'rank_iso':
-                        from rank_iso import rank_iso
-                        # rank_iso(dataObj=dataObj, dirSpec=dirSpec, refParams=refParams, args=args)
-                        rawDataObjs = strain2data[proj][ref_strain][strain]
-                        pool.apply_async(rank_iso, (dataObj, dirSpec, refParams, args, rawDataObjs, optionTools))
+                    # if args.command == 'rank_iso':
+                    #     from rank_iso import rank_iso
+                    #     # rank_iso(dataObj=dataObj, dirSpec=dirSpec, refParams=refParams, args=args)
+                    #     rawDataObjs = strain2data[proj][ref_strain][strain]
+                    #     pool.apply_async(rank_iso, (dataObj, dirSpec, refParams, args, rawDataObjs, optionTools))
+                    #
+                    #     # from tissue_spec_iso import tissue_spec_iso
+                    #     # rawDataObjs = strain2data[proj][ref_strain][strain]
+                    #     # tissue_spec_iso(dataObj, rawDataObjs, dirSpec)
 
-                        # from tissue_spec_iso import tissue_spec_iso
-                        # rawDataObjs = strain2data[proj][ref_strain][strain]
-                        # tissue_spec_iso(dataObj, rawDataObjs, dirSpec)
+                    # if args.command == 'rank_iso':
+                    #     from rank_iso_1 import rank_iso_1
+                    #     # rank_iso(dataObj=dataObj, dirSpec=dirSpec, refParams=refParams, args=args)
+                    #     rawDataObjs = strain2data[proj][ref_strain][strain]
+                    #     pool.apply_async(rank_iso_1, (dataObj, dirSpec, refParams, args, rawDataObjs, optionTools))
                     if args.command == 'allele_as':
                         from allele_as import allele_as
                         allele_as(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec, args=args)
@@ -129,20 +138,27 @@ def splitCommandRun(args, dataToProcess, refInfoParams, dirSpec, ccsParams, mini
             if args.command == 'refine':
                 from refine import refineJunc
                 pool.apply_async(refineJunc, (dataObj, refParams, dirSpec, args.refine, args.adjust))
+            if args.command == 'filter_lq_iso':
+                from iso_pu import iso_pu1
+                pool.apply_async(iso_pu1, (dataObj, refParams, dirSpec, hqIsoParams))
             if args.command == 'find_as':
                 # from find_charaterize_as_functions import *
                 from identify_as import identify_as
                 # identify_as(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)
-                pool.apply_async(identify_as, (dataObj, refParams, dirSpec, args))
+                pool.apply_async(identify_as, (dataObj, refParams, dirSpec, hqIsoParams, args))
             if args.command == 'visual_as':
                 from visual_as import visual_as
                 targetGenes = args.genes
                 # visual_as(dataObj=dataObj, targetGenes=targetGenes, refParams=refParams, dirSpec=dirSpec)
                 pool.apply_async(visual_as, (dataObj, targetGenes, refParams, dirSpec))
-            if args.command == 'rank_iso':
-                from rank_iso import rank_iso
-                # rank_iso(dataObj=dataObj, dirSpec=dirSpec, refParams=refParams, args=args)
-                pool.apply_async(rank_iso, (dataObj, dirSpec, refParams, args))
+            # if args.command == 'rank_iso':
+            #     from rank_iso import rank_iso
+            #     # rank_iso(dataObj=dataObj, dirSpec=dirSpec, refParams=refParams, args=args)
+            #     pool.apply_async(rank_iso, (dataObj, dirSpec, refParams, args))
+            # if args.command == 'rank_iso':
+            #     from rank_iso_1 import rank_iso_1
+            #     # rank_iso(dataObj=dataObj, dirSpec=dirSpec, refParams=refParams, args=args)
+            #     pool.apply_async(rank_iso_1, (dataObj, dirSpec, refParams, args))
             if args.command == 'allele_as':
                 from allele_as import allele_as
                 allele_as(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec, args=args)
@@ -164,7 +180,7 @@ def splitCommandRun(args, dataToProcess, refInfoParams, dirSpec, ccsParams, mini
             from diff_as import diff_as
             # diff_as(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec)
             compCond = args.compCond
-            diff_as(dataToProcess, compCondFile=compCond, dirSpec=dirSpec, sampleMerged=False, args=args, optionTools=optionTools)
+            diff_as(dataToProcess, compCondFile=compCond, dirSpec=dirSpec, sampleMerged=False, args=args, optionTools=optionTools, refInfoParams=refInfoParams)
         if args.command == 'go':
             from go import go
             go(args, optionTools=optionTools, dirSpec=dirSpec)
@@ -181,6 +197,7 @@ def iflas(args):
     ccsParams = defaultCfg.ccsParams
     minimap2Params = defaultCfg.minimap2Params
     collapseParams = defaultCfg.collapseParams
+    hqIsoParams = defaultCfg.hqIsoParams
     optionTools = defaultCfg.optionTools
     dirSpec = defaultCfg.dirParams
     for refStrain in refInfoParams:
@@ -192,7 +209,7 @@ def iflas(args):
     if args.command == "all":
         oneCommandRun(args, dataToProcess, refInfoParams, dirSpec, ccsParams, minimap2Params, collapseParams, optionTools)
     else:
-        splitCommandRun(args, dataToProcess, refInfoParams, dirSpec, ccsParams, minimap2Params, collapseParams, optionTools)
+        splitCommandRun(args, dataToProcess, refInfoParams, dirSpec, ccsParams, minimap2Params, collapseParams, hqIsoParams, optionTools)
     pybedtools.cleanup(remove_all=True)
 
 if __name__ == "__main__":
@@ -221,10 +238,17 @@ if __name__ == "__main__":
     parser_collapse = subparsers.add_parser('collapse', parents=[parent_parser], help='Collapse corrected reads into high-confidence isoforms', usage='%(prog)s [options]')
     # parser_collapse.add_argument('-cfg', dest="default_cfg", help="The config file used for init setting.")
 
-    parser_filter = subparsers.add_parser('refine', parents=[parent_parser], help='Refine the splice junction with the information in short reads', usage='%(prog)s [options]')
-    # parser_filter.add_argument('-cfg', dest="default_cfg", help="The config file used for init setting.")
-    parser_filter.add_argument('-adjust', dest="adjust", action="store_true", default=False, help="Adjust the strand orient by the information of junctions.")
-    parser_filter.add_argument('-refine', dest="refine", action="store_true", default=False, help="Refine the junction position by the reads support.")
+    parser_refine = subparsers.add_parser('refine', parents=[parent_parser], help='Refine the splice junction with the information in short reads', usage='%(prog)s [options]')
+    # parser_refine.add_argument('-cfg', dest="default_cfg", help="The config file used for init setting.")
+    parser_refine.add_argument('-adjust', dest="adjust", action="store_true", default=False, help="Adjust the strand orient by the information of junctions.")
+    parser_refine.add_argument('-refine', dest="refine", action="store_true", default=False, help="Refine the junction position by the reads support.")
+
+    parser_filterLQ = subparsers.add_parser('filter_lq_iso', parents=[parent_parser], help='Filter Low-Quality novel isoforms using a PU-learning based method', usage='%(prog)s [options]')
+    parser_filterLQ.add_argument('-filter_score', dest="filter_score", type=float, default=0.5, help="The PU-score that used to filter out low quality novel isoforms. Default: 0.5.")
+    parser_filterLQ.add_argument('-draw_auc', dest="draw_auc", action="store_true", default=True, help="To draw the AUC plot or not.")
+    parser_filterLQ.add_argument('-pos_fl_cov', dest="pos_fl_coverage", type=int, default=2, help="The minimal coverage that get the positive annotated isoforms. Default: 2.")
+    parser_filterLQ.add_argument('-pos_min_junc_rpkm', dest="pos_min_junc_rpkm", type=float, default=0.05, help="The minimal rpkm value of the junctions needed for a postive annotated isoform. Default: 0.05.")
+
 
     parser_findAS = subparsers.add_parser('find_as', parents=[parent_parser], help='Identify alternative splicing(AS) type from high-confidence isoforms. Four common AS type are included: intron retention, exon skipping, alternative 3 end splicing and alternative 5 end splicing', usage='%(prog)s [options]')
     # parser_findAS.add_argument('-cfg', dest="default_cfg", help="The config file used for init setting.")
@@ -236,12 +260,12 @@ if __name__ == "__main__":
     # parser_visualAS.add_argument('-cfg', dest="default_cfg", help="The config file used for init setting.")
     parser_visualAS.add_argument('-g', dest="genes", type=str, help="The gene list separated by comma or a single file contain genes one per line used for visualization.")
 
-    parser_rankAS = subparsers.add_parser('rank_iso', parents=[parent_parser], help='Score the isoform by the produce of each inclusion/exclusion ratio in that isoform, and rank all the isoforms from high to low', usage='%(prog)s [options]')
-    # parser_rankAS.add_argument('-cfg', dest="default_cfg", help="The config file used for init setting.")
-    parser_rankAS.add_argument('-coding', dest="coding", action="store_true", default=False, help="Filter the isoforms by coding or not.")
-    parser_rankAS.add_argument('-min_tpm', dest="min_tpm", type=float, default=0, help="Filter the isoforms by minimal TPM value.")
-    parser_rankAS.add_argument('-reads_freq', dest="reads_freq", type=float, default=0, help="Filter isoforms by the frequency of reads.")
-    parser_rankAS.add_argument('-read_support', dest="read_support", type=int, default=0, help="Filter isoforms by the count of reads.")
+    # parser_rankAS = subparsers.add_parser('rank_iso', parents=[parent_parser], help='Score the isoform by the produce of each inclusion/exclusion ratio in that isoform, and rank all the isoforms from high to low', usage='%(prog)s [options]')
+    # # parser_rankAS.add_argument('-cfg', dest="default_cfg", help="The config file used for init setting.")
+    # parser_rankAS.add_argument('-coding', dest="coding", action="store_true", default=False, help="Filter the isoforms by coding or not.")
+    # parser_rankAS.add_argument('-min_tpm', dest="min_tpm", type=float, default=0, help="Filter the isoforms by minimal TPM value.")
+    # parser_rankAS.add_argument('-reads_freq', dest="reads_freq", type=float, default=0, help="Filter isoforms by the frequency of reads.")
+    # parser_rankAS.add_argument('-read_support', dest="read_support", type=int, default=0, help="Filter isoforms by the count of reads.")
 
     parser_alleleAS = subparsers.add_parser('allele_as', parents=[parent_parser, go_parser], help='Identify allele-related AS', usage='%(prog)s [options]')
     # parser_alleleAS.add_argument('-cfg', dest="default_cfg", help="The config file used for init setting.")
@@ -259,6 +283,7 @@ if __name__ == "__main__":
     # parser_diffAS.add_argument('-cfg', dest="default_cfg", help="The config file used for init setting.")
     parser_diffAS.add_argument('-d', dest="compCond", type=str, help="The condition file used to detect differential AS between samples.")
     parser_diffAS.add_argument('-go', dest="go", action="store_true", default=True, help="Perform GO enrichment analysis for DSGs between samples.")
+    parser_diffAS.add_argument('-onlyRanked', dest="onlyRanked", action="store_true", default=True, help="Get differentially spliced gene only from ranked isoforms.")
     # parser_diffAS.add_argument('-bg', dest="gene2goFile", type=str, default=None, help="The mapping file between gene and go term used for GO enrichment analysis or defined in config file at 'optionTools' section.")
     # parser_diffAS.add_argument('-cutoff', dest="cutoff", type=float, default=0.05, help="The cutoff used to filter the output. Default: 0.05")
     # parser_diffAS.add_argument('-filterBy', dest="filterBy", type=str, choices=["pvalue", "p.adjust"], default="p.adjust", help="The value used to filter. Default: p.adjust.")

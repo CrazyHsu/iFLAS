@@ -9,7 +9,7 @@ Last modified: 2022-01-18
 
 from commonFuncs import *
 from commonObjs import *
-import pybedtools
+import pybedtools, copy
 
 def isCanonicalSite(strand, dinucleotideType, dinucleotide):
     if strand == "+":
@@ -368,6 +368,68 @@ def readsAssign(transBedFile, readsBedFile, offset=10, minConsenesusIntronN=1, m
         unambiOut.close()
 
 
+def refineWithJunc(bedFile=None, junctionFile=None, outFile=None, genomeFasta=None):
+    bedJunc = BedFile(bedFile, type="bed12+")
+    junction = BedFile(junctionFile, type="bed12")
+
+    bedJuncDict = bedJunc.getAllJuncDict(onebase=False, withStrand=True)
+    bedJunc2trans = bedJunc.getJunc2trans(onebase=False, withStrand=True)
+    juncDict = junction.getAllJuncDict(onebase=False, withStrand=True)
+
+    allJuncDict = dict(bedJuncDict, **juncDict)
+    allJunc2motif = getSpliceMotifFromJuncDict(allJuncDict, genomeFasta, withStrand=True)
+
+    bedJuncObj = pybedtools.BedTool("\n".join(bedJuncDict.values()), from_string=True)
+    juncObj = pybedtools.BedTool("\n".join(juncDict.values()), from_string=True)
+
+    intersectRes = bedJuncObj.intersect(juncObj, wa=True, wb=True, s=True)
+    selfIntersectRes = bedJuncObj.intersect(bedJuncObj, wa=True, wb=True, s=True)
+
+    bedJuncIsCovered = {}
+    for i in intersectRes:
+        infoList = str(i).strip("\n").split("\t")
+        if infoList[3] not in bedJuncIsCovered:
+            bedJuncIsCovered[infoList[3]] = [infoList[9]]
+        else:
+            bedJuncIsCovered[infoList[3]].append(infoList[9])
+
+    bedJuncSelfIsCovered = {}
+    for i in selfIntersectRes:
+        infoList = str(i).strip("\n").split("\t")
+        if infoList[3] not in bedJuncSelfIsCovered:
+            bedJuncSelfIsCovered[infoList[3]] = [infoList[9]]
+        else:
+            bedJuncSelfIsCovered[infoList[3]].append(infoList[9])
+
+    for i in bedJuncDict:
+        if i not in juncDict and len(set(bedJuncSelfIsCovered[i])) == 1 and i in bedJuncIsCovered:
+            for read in bedJunc2trans[i]:
+                readObj = bedJunc.reads[read]
+                originReadObj = copy.copy(readObj)
+                juncPattern = bedJuncDict[i].split("\t")[3].split(":")[1]
+
+                tmpbedJuncIsCovered = sorted(bedJuncIsCovered[i], key=lambda x: re.split(":|-", x)[1])
+                juncSub = ";".join([x.split(":")[1] for x in tmpbedJuncIsCovered])
+
+                canonicalFlag = True
+                for j in tmpbedJuncIsCovered:
+                    if allJunc2motif[j] not in ["GT-AG", "GC-AG", "AT-AC"]:
+                        canonicalFlag = False
+
+                readObj.juncChain = re.sub(juncPattern, juncSub, readObj.juncChain)
+                readObj.getBedFromJuncChain(otherInfo="\t".join(readObj.otherList))
+                if originReadObj.get_all_exons_len() * 0.8 > readObj.get_all_exons_len() or \
+                    readObj.get_all_exons_len() > originReadObj.get_all_exons_len() * 1.2 or not canonicalFlag:
+                    bedJunc.reads[read] = originReadObj
+                else:
+                    bedJunc.reads[read] = readObj
+
+    out = open(outFile, "w")
+    for read in bedJunc.reads:
+        print >>out, bedJunc.reads[read]
+    out.close()
+
+
 def refineJunc(dataObj=None, refParams=None, dirSpec=None, refine=True, adjust=True):
     projectName, sampleName = dataObj.project_name, dataObj.sample_name
     print getCurrentTime() + " Refine the collapsed isoforms for project {} sample {}...".format(projectName, sampleName)
@@ -392,14 +454,17 @@ def refineJunc(dataObj=None, refParams=None, dirSpec=None, refine=True, adjust=T
                          strandAdjust="tofu.strandAdjusted.bed12+", strandConfirmed="tofu.strandConfirm.bed12+")
         else:
             makeLink("tofu.collapsed.bed12+", "tofu.strandConfirm.bed12+")
-        if dataObj.ngs_left_reads or dataObj.ngs_right_reads:
-            if dataObj.ngs_junctions == None:
-                dataObj.ngs_junctions = os.path.join(baseDir, "mapping", "rna-seq", "reassembly", "junctions.bed")
-            juncScoringParams = "-r {} tofu.strandConfirm.bed12+ -j {}".format(refParams.ref_gpe, dataObj.ngs_junctions)
-        else:
-            juncScoringParams = "-r {} tofu.strandConfirm.bed12+".format(refParams.ref_gpe)
-        cmd = "{}/juncConsensus.pl -s <({}/juncScoring.pl {}) -l 5 tofu.strandConfirm.bed12+ > tofu.juncAdjusted.bed12+".format(utilDir, utilDir, juncScoringParams)
-        subprocess.call(cmd, shell=True, executable="/bin/bash")
+
+
+        refineWithJunc(bedFile="tofu.strandConfirm.bed12+", junctionFile=dataObj.ngs_junctions, outFile="tofu.juncAdjusted.bed12+")
+        # if dataObj.ngs_left_reads or dataObj.ngs_right_reads:
+        #     if dataObj.ngs_junctions == None:
+        #         dataObj.ngs_junctions = os.path.join(baseDir, "mapping", "rna-seq", "reassembly", "junctions.bed")
+        #     juncScoringParams = "-r {} tofu.strandConfirm.bed12+ -j {}".format(refParams.ref_gpe, dataObj.ngs_junctions)
+        # else:
+        #     juncScoringParams = "-r {} tofu.strandConfirm.bed12+".format(refParams.ref_gpe)
+        # cmd = "{}/juncConsensus.pl -s <({}/juncScoring.pl {}) -l 5 tofu.strandConfirm.bed12+ > tofu.juncAdjusted.bed12+".format(utilDir, utilDir, juncScoringParams)
+        # subprocess.call(cmd, shell=True, executable="/bin/bash")
 
         readsAssign(refParams.ref_bed, "tofu.juncAdjusted.bed12+", readsColNum=13, outPrefix="tofu.collapsed.assigned", group=True)
     else:

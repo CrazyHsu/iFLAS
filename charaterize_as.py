@@ -144,7 +144,7 @@ def getDist2TTS(refParams=None, paGroup=None):
         bedtools closest -a <(sort -k1,1 -k2,2n lrPA.bed6) -b <({}/gpeFeature.pl --tts {}|
         sort -k1,1 -k2,2n) -s -D a | {}/select.pl -i 13,4 | sort -u | tee lrPA2TTS.tsv | 
         cut -f1 | {}/box.R -w=10 -height=6 -ng -nJ -no -y='Distance to TTS' -p=lrPA2TTS.pdf
-    '''.format(utilDir, utilDir, refParams.ref_gpe, utilDir)
+    '''.format(utilDir, refParams.ref_gpe, utilDir, utilDir)
     subprocess.call(cmd, shell=True, executable="/bin/bash")
 
 
@@ -302,7 +302,7 @@ def charaterize_as(dataObj=None, refParams=None, dirSpec=None):
         makeLink("LR.A3SS.lst", "confident.A3SS.lst")
 
     # Classify APE into annotated or novel according to reference gene model
-    cmd = '''awk '{{print $0"\t"$12}}' {} | {}/gpe2bed.pl -p >reference.bed12+'''.format(utilDir, refParams.ref_gpe)
+    cmd = '''awk '{{print $0"\t"$12}}' {} | {}/gpe2bed.pl -p >reference.bed12+'''.format(refParams.ref_gpe, utilDir)
     subprocess.call(cmd, shell=True, executable="/bin/bash")
 
     transBedList = GenePredObj(refParams.ref_gpe, bincolumn=False).toBed(gene=True)
