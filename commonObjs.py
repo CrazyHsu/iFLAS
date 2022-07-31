@@ -193,6 +193,25 @@ class Bed12(object):
                     return True
         return False
 
+    def getBedFromJuncChain(self, otherInfo=""):
+        juncStarts = map(int, [i.split("-")[0] for i in self.juncChain.split(";")])
+        juncEnds = map(int, [i.split("-")[1] for i in self.juncChain.split(";")])
+        self.blockSizes = [juncStarts[0] - self.chromStart]
+        self.blockStarts = [0]
+        for i in range(len(juncStarts)-1):
+            self.blockSizes.append(juncStarts[i+1] - juncEnds[i])
+        self.blockSizes.append(self.chromEnd - juncEnds[-1])
+
+        for i in range(len(juncStarts)):
+            self.blockStarts.append(juncEnds[i] - self.chromStart)
+
+        self.blockCount = len(self.blockStarts)
+        fields = [self.chrom, str(self.chromStart), str(self.chromEnd),
+                  self.name, str(self.score), self.strand, str(self.thickStart),
+                  str(self.thickEnd), self.itemRgb, str(len(self.blockSizes)), ",".join(map(str, self.blockSizes)),
+                  ",".join(map(str, self.blockStarts)), otherInfo]
+        return "\t".join(fields)
+
     def __repr__(self):
         "return a line of bed12 format, without newline ending"
         fields = [self.chrom, str(self.chromStart), str(self.chromEnd),

@@ -506,10 +506,10 @@ def find_single_as(asType="IR", gene2ReadsDict=None, anno=False, outFile=None, o
             if asType.upper() not in findASType:
                 raise Exception("You should input the right AS type!")
             else:
-                findASType[asType](gene2ReadsDict, asType, out, isoform2reads=isoform2reads)
+                findASType[asType](gene2ReadsDict, asType, out, offset=5, isoform2reads=isoform2reads)
         else:
             for asType in findASType:
-                findASType[asType](gene2ReadsDict, isoform2reads=isoform2reads)
+                findASType[asType](gene2ReadsDict, offset=5, isoform2reads=isoform2reads)
     else:
         newGene2ReadsDict = {}
         for myChr, myValue in gene2ReadsDict.iteritems():
@@ -538,10 +538,10 @@ def find_single_as(asType="IR", gene2ReadsDict=None, anno=False, outFile=None, o
             if asType.upper() not in findASType:
                 raise Exception("You should input the right AS type!")
             else:
-                findASType[asType](newGene2ReadsDict, asType, out, isoform2reads=isoform2reads, anno=False)
+                findASType[asType](newGene2ReadsDict, asType, out, offset=5, isoform2reads=isoform2reads, anno=False)
         else:
             for asType in findASType:
-                findASType[asType](newGene2ReadsDict, isoform2reads=isoform2reads)
+                findASType[asType](newGene2ReadsDict, offset=5, isoform2reads=isoform2reads)
 
     out.close()
 

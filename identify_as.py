@@ -16,7 +16,7 @@ def identify_as(dataObj=None, refParams=None, dirSpec=None, hqIsoParams=None, ar
         from refine import refineJunc
         refineJunc(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec, refine=False, adjust=False)
 
-    if not validateFile(hqIsoDir):
+    if not validateDir(hqIsoDir):
         from iso_pu import iso_pu1
         iso_pu1(dataObj=dataObj, refParams=refParams, dirSpec=dirSpec, hqIsoParams=hqIsoParams)
 

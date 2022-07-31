@@ -28,6 +28,16 @@ def isCanonicalSite(strand, dinucleotideType, dinucleotide):
                 return 1
     return 0
 
+def validJunction(start, end, juncChain):
+    exonLen = []
+    juncStarts = [int(i.split("-")[0]) for i in juncChain.split(";")]
+    juncEnds = [int(i.split("-")[1]) for i in juncChain.split(";")]
+    exonLen.append(juncStarts[0] - int(start))
+    for i in range(0, len(juncStarts)-1):
+        exonLen.append(juncStarts[i+1] - juncEnds[i])
+    exonLen.append(int(end) - juncEnds[-1])
+    return False if sum([i <= 0 for i in exonLen]) else True
+
 def identifyNovelIsoformsByJunctions(gpeFile, bedFile, anno="annoIsoform.bed", novel="novelIsoform.bed"):
     annoOut = open(anno, "w")
     novelOut = open(novel, "w")
@@ -401,6 +411,7 @@ def refineWithJunc(bedFile=None, junctionFile=None, outFile=None, genomeFasta=No
         else:
             bedJuncSelfIsCovered[infoList[3]].append(infoList[9])
 
+    unvalidReads = []
     for i in bedJuncDict:
         if i not in juncDict and len(set(bedJuncSelfIsCovered[i])) == 1 and i in bedJuncIsCovered:
             for read in bedJunc2trans[i]:
@@ -416,6 +427,9 @@ def refineWithJunc(bedFile=None, junctionFile=None, outFile=None, genomeFasta=No
                     if allJunc2motif[j] not in ["GT-AG", "GC-AG", "AT-AC"]:
                         canonicalFlag = False
 
+                if not validJunction(readObj.chromStart, readObj.chromEnd, re.sub(juncPattern, juncSub, readObj.juncChain)):
+                    unvalidReads.append(read)
+                    continue
                 readObj.juncChain = re.sub(juncPattern, juncSub, readObj.juncChain)
                 readObj.getBedFromJuncChain(otherInfo="\t".join(readObj.otherList))
                 if originReadObj.get_all_exons_len() * 0.8 > readObj.get_all_exons_len() or \
@@ -426,7 +440,8 @@ def refineWithJunc(bedFile=None, junctionFile=None, outFile=None, genomeFasta=No
 
     out = open(outFile, "w")
     for read in bedJunc.reads:
-        print >>out, bedJunc.reads[read]
+        if read not in unvalidReads:
+            print >>out, bedJunc.reads[read]
     out.close()
 
 
@@ -455,8 +470,9 @@ def refineJunc(dataObj=None, refParams=None, dirSpec=None, refine=True, adjust=T
         else:
             makeLink("tofu.collapsed.bed12+", "tofu.strandConfirm.bed12+")
 
-
-        refineWithJunc(bedFile="tofu.strandConfirm.bed12+", junctionFile=dataObj.ngs_junctions, outFile="tofu.juncAdjusted.bed12+")
+        if dataObj.ngs_junctions == None:
+            dataObj.ngs_junctions = os.path.join(baseDir, "mapping", "rna-seq", "reassembly", "junctions.bed")
+        refineWithJunc(bedFile="tofu.strandConfirm.bed12+", junctionFile=dataObj.ngs_junctions, outFile="tofu.juncAdjusted.bed12+", genomeFasta=refParams.ref_genome)
         # if dataObj.ngs_left_reads or dataObj.ngs_right_reads:
         #     if dataObj.ngs_junctions == None:
         #         dataObj.ngs_junctions = os.path.join(baseDir, "mapping", "rna-seq", "reassembly", "junctions.bed")

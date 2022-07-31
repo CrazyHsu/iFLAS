@@ -59,7 +59,8 @@ def splitCommandRun(args, dataToProcess, refInfoParams, dirSpec, ccsParams, mini
                         pool.apply_async(refineJunc, (dataObj, refParams, dirSpec, args.refine, args.adjust))
                     if args.command == 'filter_lq_iso':
                         from iso_pu import iso_pu1
-                        pool.apply_async(iso_pu1, (dataObj, refParams, dirSpec, hqIsoParams))
+                        # iso_pu1(dataObj, dirSpec, refParams, hqIsoParams)
+                        pool.apply_async(iso_pu1, (dataObj, dirSpec, refParams, hqIsoParams))
                     if args.command == 'find_as':
                         # from find_charaterize_as_functions import *
                         from identify_as import identify_as
@@ -140,7 +141,8 @@ def splitCommandRun(args, dataToProcess, refInfoParams, dirSpec, ccsParams, mini
                 pool.apply_async(refineJunc, (dataObj, refParams, dirSpec, args.refine, args.adjust))
             if args.command == 'filter_lq_iso':
                 from iso_pu import iso_pu1
-                pool.apply_async(iso_pu1, (dataObj, refParams, dirSpec, hqIsoParams))
+                # iso_pu1(dataObj, dirSpec, refParams, hqIsoParams)
+                pool.apply_async(iso_pu1, (dataObj, dirSpec, refParams, hqIsoParams))
             if args.command == 'find_as':
                 # from find_charaterize_as_functions import *
                 from identify_as import identify_as
@@ -245,10 +247,11 @@ if __name__ == "__main__":
 
     parser_filterLQ = subparsers.add_parser('filter_lq_iso', parents=[parent_parser], help='Filter Low-Quality novel isoforms using a PU-learning based method', usage='%(prog)s [options]')
     parser_filterLQ.add_argument('-filter_score', dest="filter_score", type=float, default=0.5, help="The PU-score that used to filter out low quality novel isoforms. Default: 0.5.")
-    parser_filterLQ.add_argument('-draw_auc', dest="draw_auc", action="store_true", default=True, help="To draw the AUC plot or not.")
+    parser_filterLQ.add_argument('-draw_auc', dest="draw_auc", action="store_true", default=False, help="To draw the AUC plot or not.")
     parser_filterLQ.add_argument('-pos_fl_cov', dest="pos_fl_coverage", type=int, default=2, help="The minimal coverage that get the positive annotated isoforms. Default: 2.")
     parser_filterLQ.add_argument('-pos_min_junc_rpkm', dest="pos_min_junc_rpkm", type=float, default=0.05, help="The minimal rpkm value of the junctions needed for a postive annotated isoform. Default: 0.05.")
-
+    parser_filterLQ.add_argument('-select_best_model', dest="select_best_model", action="store_true", default=False, help="Select the best model. If not, iFLAS will use GB.")
+    parser_filterLQ.add_argument('-auto_filter_score', dest="auto_filter_score", action="store_true", default=False, help="Auto determine pu_score when 'select_best_model' is selected.")
 
     parser_findAS = subparsers.add_parser('find_as', parents=[parent_parser], help='Identify alternative splicing(AS) type from high-confidence isoforms. Four common AS type are included: intron retention, exon skipping, alternative 3 end splicing and alternative 5 end splicing', usage='%(prog)s [options]')
     # parser_findAS.add_argument('-cfg', dest="default_cfg", help="The config file used for init setting.")

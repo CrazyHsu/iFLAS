@@ -3,6 +3,7 @@ python ${run_dir}/iflas.py preproc -cfg ${run_dir}/test_data/test_pacbio_wangbo_
 python ${run_dir}/iflas.py mapping -cfg ${run_dir}/test_data/test_pacbio_wangbo_hybrid.cfg -jcs 2
 python ${run_dir}/iflas.py collapse -cfg ${run_dir}/test_data/test_pacbio_wangbo_hybrid.cfg
 python ${run_dir}/iflas.py refine -cfg ${run_dir}/test_data/test_pacbio_wangbo_hybrid.cfg -refine
+python ${run_dir}/iflas.py filter_lq_iso -cfg ${run_dir}/test_data/test_pacbio_wangbo_hybrid.cfg -draw_auc -select_best_model -auto_filter_score
 python ${run_dir}/iflas.py find_as -cfg ${run_dir}/test_data/test_pacbio_wangbo_hybrid.cfg
 python ${run_dir}/iflas.py visual_as -cfg ${run_dir}/test_data/test_pacbio_wangbo_hybrid.cfg -g Zm00001d050245
 python ${run_dir}/iflas.py rank_iso -cfg ${run_dir}/test_data/test_pacbio_wangbo_hybrid.cfg

@@ -45,8 +45,8 @@ DATA_TAGS = [PROJECTNAME, SAMPLENAME, STRAIN, CONDITION, TGSPLAT, STRATEGY, DATA
        "kit_type"]
 COLLAPSE_TAGS = [MINIDENTITY, MINCOVERAGE, FLCOVERAGE, MAXFUZZYJUNCTION, MAX5DIFF, MAX3DIFF, DUNMERGE5SHORTER] \
     = ["min_identity", "min_coverage", "fl_coverage", "max_fuzzy_junction", "max_5_diff", "max_3_diff", "dun_merge_5_shorter"]
-HQISO_FILTER_TAGS = [FILTERSCORE, DRAWAUC, POSFLCOVERAGE, POSMINJUNCRPKM] \
-    = ["filter_score", "draw_auc", "pos_fl_coverage", "pos_min_junc_rpkm"]
+HQISO_FILTER_TAGS = [FILTERSCORE, DRAWAUC, POSFLCOVERAGE, POSMINJUNCRPKM, SELECTBESTMODEL, AUTOFILTERSCORE] \
+    = ["filter_score", "draw_auc", "pos_fl_coverage", "pos_min_junc_rpkm", "select_best_model", "auto_filter_score"]
 
 OPTION_TAGS = [THREADS, MEMORY, GENE2GO, MERGEDATAFROMSAMESTRAIN] \
     = ["threads", "memory", "gene2go", "merge_data_from_same_strain"]
@@ -66,7 +66,7 @@ BUILDIN_TAGS = [SECTIONTYPE] + BUILDIN_TAGS
 DIR_TAGS = [SECTIONTYPE] + DIR_TAGS
 VALID_TAGS = [SECTIONTYPE] + REF_TAGS + CCS_TAGS + DATA_TAGS + MINIMAP2_TAGS + COLLAPSE_TAGS + HQISO_FILTER_TAGS + OPTION_TAGS + BUILDIN_TAGS + DIR_TAGS
 
-BOOLEAN_TAGS = [USEFMLRC2, DUNMERGE5SHORTER, MERGEDATAFROMSAMESTRAIN, DUNMERGE5SHORTER, DRAWAUC]
+BOOLEAN_TAGS = [USEFMLRC2, DUNMERGE5SHORTER, MERGEDATAFROMSAMESTRAIN, DUNMERGE5SHORTER, DRAWAUC, SELECTBESTMODEL, AUTOFILTERSCORE]
 FLOAT_TAGS = [CCSMINREADSCORE, CCSMINPREDICTEDACCURACY, MINIDENTITY, MINCOVERAGE]
 INTEGER_TAGS = [CCSMINREADLENGTH, CCSMINSUBREADLENGTH, CCSMINCCSLENGTH, CCSMINPASS, FLCOVERAGE, MAXFUZZYJUNCTION,
                 MAX5DIFF, MAX3DIFF, MAXINTRONLENGTH, THREADS, SINGLERUNTHREADS, NGSREADSLENGTH, NGSLIBRARYSTRAND]
@@ -140,9 +140,11 @@ class HqIsoFilter(object):
     def __init__(self, type):
         self.section_type = type
         self.filter_score = 0.5
-        self.draw_auc = True
+        self.draw_auc = False
         self.pos_fl_coverage = 2
         self.pos_min_junc_rpkm = 0.05
+        self.select_best_model = False
+        self.auto_filter_score = False
 
     def __setattr__(self, key, value):
         if key != "section_type" and key not in HQISO_FILTER_TAGS:

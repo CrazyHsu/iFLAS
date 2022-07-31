@@ -1244,10 +1244,15 @@ class SchemeModelEval(object):
         print("Recall:", recall[1])
 
 
-    def filterIsoformsByScore(self, filterScore=0.0, outFile="validIsoform.lst"):
+    def filterIsoformsByScore(self, filterScore=0.0, outFile="validIsoform.lst", lqAnnoIso=None):
         hqNovelIsoRes = self.predResults.loc[(self.predResults.label==0) & (self.predResults.pu_score>=filterScore), ]
         annoIsoRes = self.predResults.loc[self.predResults.label==1,]
-        outResults = pd.concat([annoIsoRes, hqNovelIsoRes])
+        if lqAnnoIso is not None:
+            lqAnnoIsoRes = lqAnnoIso.loc[:, "label"]
+            lqAnnoIsoRes["pu_score"] = 1
+            outResults = pd.concat([annoIsoRes, lqAnnoIsoRes, hqNovelIsoRes])
+        else:
+            outResults = pd.concat([annoIsoRes, hqNovelIsoRes])
         outResults.to_csv(outFile, sep="\t", index=True, index_label="isoform")
 
 
@@ -1819,7 +1824,7 @@ def processInputFile(inputBed, genomeFa, refBed, junctionFile=None, samFile=None
     return gf.features
 
 
-def selectBestModel(featureData, drawAUC=False):
+def selectBestModel(featureData, drawAUC=False, selectPUscore=False):
     from sklearn.model_selection import KFold
 
     usedFeatures = ["isoLength", "flCount", "ratioIsoToGene", "exonNum", "GC", "orfLength", "orfIntegrity",
@@ -1864,6 +1869,7 @@ def selectBestModel(featureData, drawAUC=False):
     names = ["RF", "GB", "DT", "SVM", "NB"]
 
     aucScore = dict.fromkeys(models, {})
+    puScoreTholdDict = {}
     for scheme in ["bagging"]:
         if drawAUC:
             fig1 = plt.figure(figsize=[6, 6])
@@ -1905,6 +1911,13 @@ def selectBestModel(featureData, drawAUC=False):
                     "train_label": trainingData.loc[trainingData.label == 0,].label,
                     "pu_score": pu_score.pu_score
                 }, columns=["true_label", "train_label", "pu_score"])
+
+                if selectPUscore:
+                    thold = np.quantile(results.pu_score, 0.95)
+                    if model not in puScoreTholdDict:
+                        puScoreTholdDict[model] = [thold]
+                    else:
+                        puScoreTholdDict[model].append(thold)
 
                 fpr, tpr, t = roc_curve(results.true_label, results.pu_score)
                 tprs.append(interp(mean_fpr, fpr, tpr))
@@ -1954,7 +1967,7 @@ def selectBestModel(featureData, drawAUC=False):
         if np.mean(aucScore[i].values()) > tmpScore:
             tmpModel = i
             tmpScore = np.mean(aucScore[i].values())
-    return tmpModel
+    return tmpModel, puScoreTholdDict
 
 # def iso_pu():
 #
@@ -2018,8 +2031,12 @@ def iso_pu1(dataObj=None, dirSpec=None, refParams=None, hqIsoParams=None, samFil
     novelIsoData = featureData.loc[featureData.annotation == "novel",]
     posIsoData = annoIsoData.loc[(annoIsoData.flCount >= int(hqIsoParams.pos_fl_coverage)) &
                                  (annoIsoData.minJuncRPKM >= float(hqIsoParams.pos_min_junc_rpkm)),]
+    lqAnnoIsoData = annoIsoData.loc[~annoIsoData.index.isin(posIsoData.index),]
+
     posIsoDataCopy = posIsoData.copy()
     posIsoDataCopy["label"] = 1
+    lqAnnoIsoDataCopy = lqAnnoIsoData.copy()
+    lqAnnoIsoDataCopy["label"] = 1
     novelIsoDataCopy = novelIsoData.copy()
     novelIsoDataCopy["label"] = 0
 
@@ -2031,11 +2048,20 @@ def iso_pu1(dataObj=None, dirSpec=None, refParams=None, hqIsoParams=None, samFil
     dataToClassify = dataToClassify.sample(frac=1)
     dataToClassify.replace({False: 0, True: 1}, inplace=True)
 
-    bestModel = selectBestModel(featureData, drawAUC=hqIsoParams.draw_auc)
+    if hqIsoParams.select_best_model:
+        if hqIsoParams.auto_filter_score:
+            bestModel, puScoreTholdDict = selectBestModel(featureData, drawAUC=hqIsoParams.draw_auc, selectPUscore=True)
+            filter_score = np.mean(puScoreTholdDict[bestModel])
+        else:
+            bestModel, puScoreTholdDict = selectBestModel(featureData, drawAUC=hqIsoParams.draw_auc, selectPUscore=False)
+            filter_score = float(hqIsoParams.filter_score)
+    else:
+        bestModel = "GB"
+        filter_score = float(hqIsoParams.filter_score)
     sme = SchemeModelEval(trainingData=dataToClassify, model=bestModel, scheme="bagging")
     # sme = SchemeModelEval(trainingData=dataToClassify, model="GB", scheme="bagging")
     sme.eval()
-    sme.filterIsoformsByScore(filterScore=float(hqIsoParams.filter_score), outFile="validIsoforms.lst")
+    sme.filterIsoformsByScore(filterScore=filter_score, outFile="validIsoforms.lst", lqAnnoIso=lqAnnoIsoDataCopy)
 
     cmd = "filter.pl -o validIsoforms.lst {} -2 4 -m i > hq.collapsed.bed12+".format(inputBed)
     subprocess.call(cmd, shell=True)
