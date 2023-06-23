@@ -1,0 +1,137 @@
+FROM ubuntu:16.04
+MAINTAINER xufeng <crazyhsu9527@gmail.com>
+
+# install basic dependencies
+#RUN sed -i s@/archive.ubuntu.com/@/mirrors.tuna.tsinghua.edu.cn/@g /etc/apt/sources.list
+RUN apt-get clean && apt-get update && apt-get install -y --no-install-recommends \
+	build-essential \
+	cmake \
+	git \
+	wget \
+	apt-transport-https \
+	libz-dev \
+	ca-certificates \
+	vim \
+	less \
+	sudo \
+	apt-utils
+
+# install python3.6
+RUN apt-get install -y software-properties-common && add-apt-repository ppa:deadsnakes/ppa && \
+    apt-get update && apt-get install -y python3.6 python3-pip && \
+    python3.6 -m pip install pip --upgrade && \
+    python3.6 -m pip install wheel
+
+# install albacore
+RUN wget https://apac.oxfordnanoportal.com/software/analysis/ont_albacore-2.3.4-cp36-cp36m-manylinux1_x86_64.whl && \
+    pip3 install ont_albacore-2.3.4-cp36-cp36m-manylinux1_x86_64.whl
+
+ARG UID=1001
+ARG GID=1001
+RUN groupadd --gid $GID iflas && useradd --uid $UID --gid iflas --shell /bin/bash --create-home iflas
+RUN echo "root:123456" | chpasswd
+USER iflas
+
+ENV IFLAS_HOME /home/iflas
+
+RUN mkdir $IFLAS_HOME/data && mkdir $IFLAS_HOME/software
+
+# install miniconda for python2.7
+#RUN wget --no-check-certificate https://mirrors.tuna.tsinghua.edu.cn/anaconda/miniconda/Miniconda2-latest-Linux-x86_64.sh -O ~/miniconda2.sh && \
+RUN wget --no-check-certificate https://repo.anaconda.com/miniconda/Miniconda2-latest-Linux-x86_64.sh -O ~/miniconda2.sh && \
+	/bin/bash ~/miniconda2.sh -b -p $IFLAS_HOME/software/conda && \
+	rm ~/miniconda2.sh
+
+RUN git config --global http.postBuffer 1000000000 && \
+	git clone https://github.com/xiaochuanle/MECAT.git $IFLAS_HOME/software/MECAT
+WORKDIR $IFLAS_HOME/software/MECAT
+RUN make
+ENV PATH=$IFLAS_HOME/software/MECAT/Linux-amd64/bin/:$PATH
+
+RUN wget --no-check-certificate https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8/hdf5-1.8.15-patch1/src/hdf5-1.8.15-patch1.tar.gz -O $IFLAS_HOME/software/hdf5-1.8.15-patch1.tar.gz && \
+	tar -xf $IFLAS_HOME/software/hdf5-1.8.15-patch1.tar.gz -C $IFLAS_HOME/software/ && \
+	mkdir $IFLAS_HOME/software/hdf5 && rm -rf $IFLAS_HOME/software/hdf5-1.8.15-patch1.tar.gz
+
+WORKDIR $IFLAS_HOME/software/hdf5-1.8.15-patch1
+RUN ./configure --enable-cxx --prefix=$IFLAS_HOME/software/hdf5 && make && make install
+
+RUN git clone https://github.com/PacificBiosciences/DEXTRACTOR.git $IFLAS_HOME/software/DEXTRACTOR && \
+	cp $IFLAS_HOME/software/MECAT/dextract_makefile $IFLAS_HOME/software/DEXTRACTOR
+
+WORKDIR $IFLAS_HOME/software/DEXTRACTOR
+ENV HDF5_INCLUDE=$IFLAS_HOME/software/hdf5/include
+ENV HDF5_LIB=$IFLAS_HOME/software/hdf5/lib
+RUN sed -i '7s/.*/\t${CC} $(CFLAGS) -I$(HDF5_INCLUDE) -L$(HDF5_LIB) -o dextract dextract.c sam.c bax.c expr.c DB.c QV.c -lhdf5 -lz/' dextract_makefile
+RUN make -f dextract_makefile
+
+ENV LD_LIBRARY_PATH=$IFLAS_HOME/software/hdf5/lib:$LD_LIBRARY_PATH
+ENV PATH=$IFLAS_HOME/software/DEXTRACTOR:$PATH
+
+ENV PATH=$IFLAS_HOME/software/conda/bin:$IFLAS_HOME/software:$PATH
+
+# change conda source for overseas users
+RUN conda config --add channels bioconda && \
+	conda config --add channels conda-forge && \
+	conda config --add channels r
+
+RUN conda update --all -y
+
+# create isoseq3 environment with python2.7
+RUN conda create -n isoseq3_pipeline python=2.7
+
+# set some environment variables
+ENV CONDA_DEFAULT_ENV=isoseq3_pipeline
+ENV CONDA_PREFIX=$IFLAS_HOME/software/conda/envs/$CONDA_DEFAULT_ENV
+ENV CONDA_AUTO_UPDATE_CONDA=false
+
+RUN echo ". $IFLAS_HOME/software/conda/etc/profile.d/conda.sh" >> ~/.bashrc && \
+	echo "conda activate isoseq3_pipeline" >> ~/.bashrc
+
+# conda install required packages
+RUN conda install -y -c conda-forge r=3.6 perl numpy pandas matplotlib=2.2.3 scipy=1.2.1 scikit-image=0.14.3 psutil pulp networkx=2.2
+RUN conda install -y -c bioconda biopython pysam perl-bioperl perl-app-cpanminus perl-dbi blast subread samtools=1.9 pybedtools stringtie minimap2 seqkit hisat2 parasail-python mash pyvcf
+RUN conda install -y -c bioconda ucsc-bedtogenepred ucsc-gtftogenepred ucsc-genepredtogtf
+RUN conda install -y -c bioconda isoseq3=3.3 pbccs=4.2 rmats=4.0.2 bioconductor-deseq2 bioconductor-ebseq
+
+#RUN conda install -y r-ggplot2 r-scales r-reshape r-gridextra r-rpart r-rocr r-caret r-optparse r-lattice \
+#                    r-foreach r-e1071 r-randomforest r-partykit r-ipred r-rpart.plot r-domc r-nnet r-rose r-proc \
+#                     r-mlmetrics r-pheatmap r-emt r-stringi=1.4.6 && \
+#    R -e "install.packages('valr')"
+RUN conda install -y r-stringi=1.4.6 r-dplyr=1.0.0 r-tibble=3.0.0 r-gridBase && \
+    R -e "install.packages('valr')"
+
+# generic installation
+RUN git clone https://github.com/Magdoll/cDNA_Cupcake.git && \
+    cd cDNA_Cupcake && git checkout Py2_v8.7.x && \
+    $CONDA_PREFIX/bin/python setup.py build && $CONDA_PREFIX/bin/python setup.py install
+
+RUN $CONDA_PREFIX/bin/cpanm Log::Log4perl File::Which && \
+	git clone https://github.com/BioInf-Wuerzburg/proovread.git $IFLAS_HOME/software/proovread && \
+	make -C $IFLAS_HOME/software/proovread
+ENV PATH=$IFLAS_HOME/software/proovread/bin:$PATH
+
+RUN git clone https://github.com/CrazyHsu/SQANTI.git $IFLAS_HOME/software/sqanti && \
+	chmod +x $IFLAS_HOME/software/sqanti/sqanti_qc.py
+ENV PATH=$IFLAS_HOME/software/sqanti:$PATH
+
+RUN wget --no-check-certificate https://sourceforge.net/projects/pyml/files/PyML-0.7.14.tar.gz -O $IFLAS_HOME/software/PyML-0.7.14.tar.gz && \
+	tar -xf $IFLAS_HOME/software/PyML-0.7.14.tar.gz -C $IFLAS_HOME/software && rm -rf $IFLAS_HOME/software/PyML-0.7.14.tar.gz
+WORKDIR $IFLAS_HOME/software/PyML-0.7.14
+RUN $CONDA_PREFIX/bin/python setup.py build && $CONDA_PREFIX/bin/python setup.py install
+
+#RUN $CONDA_PREFIX/bin/pip install -i https://pypi.anaconda.org/adarsh/simple pyml
+RUN wget --no-check-certificate https://sourceforge.net/projects/splicegrapher/files/SpliceGrapher-0.2.7.tgz -O $IFLAS_HOME/software/SpliceGrapher-0.2.7.tgz && \
+	tar -xf $IFLAS_HOME/software/SpliceGrapher-0.2.7.tgz -C $IFLAS_HOME/software && rm -rf $IFLAS_HOME/software/SpliceGrapher-0.2.7.tgz
+WORKDIR $IFLAS_HOME/software/SpliceGrapher-0.2.7
+RUN $CONDA_PREFIX/bin/python setup.py build && $CONDA_PREFIX/bin/python setup.py install
+
+# RUN conda install -y -c bioconda ucsc-genepredtobed
+
+RUN git clone https://github.com/Magdoll/Cogent.git $IFLAS_HOME/software/Cogent && \
+    cd $IFLAS_HOME/software/Cogent && git checkout Py2.7_4.0.x && git submodule update --init --recursive && \
+    cd Complete-Striped-Smith-Waterman-Library/src && make && \
+    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$IFLAS_HOME/software/Cogent/Complete-Striped-Smith-Waterman-Library/src && \
+    export PYTHONPATH=$PYTHONPATH:$IFLAS_HOME/software/Cogent/Complete-Striped-Smith-Waterman-Library/src && \
+    cd ../../ && python setup.py build && python setup.py install
+
+WORKDIR $IFLAS_HOME

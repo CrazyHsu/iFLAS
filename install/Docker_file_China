@@ -1,0 +1,94 @@
+FROM ubuntu:16.04
+MAINTAINER xufeng <crazyhsu9527@gmail.com>
+
+# install basic dependencies
+#RUN sed -i s@/archive.ubuntu.com/@/mirrors.tuna.tsinghua.edu.cn/@g /etc/apt/sources.list
+RUN apt-get clean && apt-get update && apt-get install -y --no-install-recommends \
+	build-essential \
+	cmake \
+	git \
+	wget \
+	apt-transport-https \
+	libz-dev \
+	gcc \
+	ca-certificates \
+	vim \
+	less \
+	sudo \
+	apt-utils
+
+# install python3.6
+#RUN apt-get install -y software-properties-common && add-apt-repository ppa:deadsnakes/ppa && \
+#    apt-get update && apt-get install -y python3.6 python3-pip && \
+#    python3.6 -m pip install pip --upgrade && \
+#    python3.6 -m pip install wheel
+
+# install albacore
+#RUN wget https://apac.oxfordnanoportal.com/software/analysis/ont_albacore-2.3.4-cp36-cp36m-manylinux1_x86_64.whl && \
+#    pip3 install ont_albacore-2.3.4-cp36-cp36m-manylinux1_x86_64.whl
+
+ARG UID=1001
+ARG GID=1001
+RUN groupadd --gid $GID iflas && useradd --uid $UID --gid iflas --shell /bin/bash --create-home iflas
+RUN echo "root:123456" | chpasswd
+USER iflas
+
+ENV IFLAS_HOME /home/iflas
+WORKDIR $IFLAS_HOME
+
+RUN mkdir $IFLAS_HOME/data && mkdir $IFLAS_HOME/software
+
+# install miniconda for python2.7
+#RUN wget --no-check-certificate https://mirrors.tuna.tsinghua.edu.cn/anaconda/miniconda/Miniconda2-latest-Linux-x86_64.sh -O ~/miniconda2.sh && \
+RUN wget --no-check-certificate https://repo.anaconda.com/miniconda/Miniconda2-latest-Linux-x86_64.sh -O ~/miniconda2.sh && \
+	/bin/bash ~/miniconda2.sh -b -p $IFLAS_HOME/software/conda && \
+	rm ~/miniconda2.sh
+
+ENV PATH=$IFLAS_HOME/software/conda/bin:$IFLAS_HOME/software:$PATH
+
+# change conda source for overseas users
+RUN conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/free/ && \
+	conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/main/ && \
+	conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/conda-forge/ && \
+	conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/bioconda/ && \
+	conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/r/
+
+RUN conda update --all -y
+
+# create isoseq3 environment with python2.7
+RUN conda create -n isoseq3_pipeline python=2.7
+
+# set some environment variables
+ENV CONDA_DEFAULT_ENV=isoseq3_pipeline
+ENV CONDA_PREFIX=$IFLAS_HOME/software/conda/envs/$CONDA_DEFAULT_ENV
+ENV CONDA_AUTO_UPDATE_CONDA=false
+
+RUN echo ". $IFLAS_HOME/software/conda/etc/profile.d/conda.sh" >> ~/.bashrc && \
+	echo "conda activate isoseq3_pipeline" >> ~/.bashrc
+
+# conda install required packages
+RUN conda install -y -c conda-forge r=3.6 perl numpy pandas matplotlib=2.2.3 scipy=1.2.1 scikit-image=0.14.3 psutil pulp networkx=2.2
+RUN conda install -y -c bioconda biopython pysam perl-bioperl perl-app-cpanminus perl-dbi blast subread samtools=1.9 pybedtools stringtie minimap2 seqkit hisat2 parasail-python mash pyvcf
+RUN conda install -y -c bioconda ucsc-bedtogenepred ucsc-gtftogenepred ucsc-genepredtogtf
+RUN conda install -y -c bioconda isoseq3=3.3 pbccs=4.2 rmats=4.0.2 bioconductor-deseq2 bioconductor-ebseq
+
+RUN conda install -y r-reshape r-gridextra r-rpart r-rocr r-caret r-optparse r-lattice \
+                     r-e1071 r-randomforest r-partykit r-ipred r-rpart.plot r-domc r-nnet r-rose r-proc \
+                     r-mlmetrics r-pheatmap r-emt r-stringi=1.4.6 && \
+    R -e "install.packages('valr')" && R -e "install.packages('tidyr')"
+
+# generic installation
+RUN git clone https://github.com/Magdoll/cDNA_Cupcake.git $IFLAS_HOME/software/cDNA_Cupcake && \
+    cd $IFLAS_HOME/software/cDNA_Cupcake && git checkout Py2_v8.7.x && \
+    $CONDA_PREFIX/bin/python setup.py build && $CONDA_PREFIX/bin/python setup.py install
+
+RUN git clone https://hub.fastgit.org/CrazyHsu/SpliceGrapher_packages.git $IFLAS_HOME/software/SpliceGrapher_packages
+RUN cd $IFLAS_HOME/software/SpliceGrapher_packages && tar -xf PyML-0.7.14.tar.gz && rm -rf PyML-0.7.14.tar.gz
+WORKDIR $IFLAS_HOME/software/SpliceGrapher_packages/PyML-0.7.14
+RUN $CONDA_PREFIX/bin/python setup.py build && $CONDA_PREFIX/bin/python setup.py install
+
+RUN cd $IFLAS_HOME/software/SpliceGrapher_packages && tar -xf SpliceGrapher-0.2.7.tgz && rm -rf SpliceGrapher-0.2.7.tgz
+WORKDIR $IFLAS_HOME/software/SpliceGrapher_packages/SpliceGrapher-0.2.7
+RUN $CONDA_PREFIX/bin/python setup.py build && $CONDA_PREFIX/bin/python setup.py install
+
+WORKDIR $IFLAS_HOME
