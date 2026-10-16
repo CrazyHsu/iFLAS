@@ -6,7 +6,7 @@ use warnings;
 use Getopt::Long;
 use File::Basename;
 use lib dirname $0;
-use pm::common qw/arraySplice/;
+use pm::common;
 
 my ($originalFile);
 my ($originalFields, $targetFields, $mode, $sep)=("1", "1", "e", "");

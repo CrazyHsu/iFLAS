@@ -1,0 +1,45 @@
+# iFLAS global config. Per-sample info lives in samples.tsv (one row per sample/replicate).
+# Paths may be relative (resolved against THIS file's directory) or use ${ENV_VARS}.
+
+reference:
+  - ref_strain: B73
+    ref_genome: genome/Zea_mays.B73.fa
+    ref_gtf: genome/Zea_mays.B73.gtf
+    # Files made by `iflas init-ref` (it prints these lines):
+    # ref_size: genome/Zea_mays.B73.len.txt
+    # ref_gpe: genome/Zea_mays.B73.gpe
+    # ref_bed: genome/Zea_mays.B73.bed
+    # ref_mm2_index: genome/Zea_mays.B73.mm2
+    # hisat2_index: genome/hisat2/B73
+
+ccs:
+  min_pass: 2
+  min_predicted_accuracy: 0.9
+
+minimap2:
+  max_intron_length: 50000
+
+collapse:
+  min_identity: 0.9
+  min_coverage: 0.9
+
+pu_filter:
+  filter_score: 0.5
+  random_state: 0        # seed of the PU bagging / shuffles (reproducible scores)
+  pos_fl_coverage: 2
+  pos_min_junc_rpkm: 0.05
+
+options:
+  threads: 8
+  memory: 8000M
+  # gene2go: annotation/gene2go.txt
+  merge_data_from_same_strain: true
+  # ONT direct RNA: cut the basecalled 3' poly(A) before mapping (raw reads stay for nanopolish).
+  # false reproduces iFLAS 1, which loses about a third of the nanopore reads in collapse.
+  ont_trim_polya: true
+  # allele-specific AS/ASE only on phased loci with an SNP that the NGS reads confirm; false reproduces iFLAS 1.
+  asas_ngs_confirm: true
+
+dirs:
+  out_dir: iflas_out
+  # tmp_dir: /tmp/iflas

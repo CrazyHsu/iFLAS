@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [main, py3]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -el {0}   # login shell so the conda env is active
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up core conda env (environment.yml)
+        uses: mamba-org/setup-micromamba@v2
+        with:
+          environment-file: environment.yml
+          cache-environment: true
+
+      - name: Install iFLAS and the test tools
+        run: pip install -e ".[dev]"
+
+      - name: Show key versions
+        run: |
+          python --version
+          python -c "import iflas; print('iflas', iflas.__version__)"
+          iflas --version
+
+      - name: Run tests
+        run: pytest -q

@@ -1,0 +1,87 @@
+gene	chrom	strand	start	end	n_isoforms	category	softmasked	motif	note
+seA	chr1	+	2700	4850	2	as	0	GT-AG	
+seB	chr1	-	6050	8170	2	as	0	GT-AG	
+seC	chr1	+	9530	11950	2	as	0	GT-AG	
+seD	chr1	-	13150	15350	3	as	0	GT-AG	
+irA	chr1	+	16550	18050	2	as	0	GT-AG	
+irB	chr1	-	19330	20980	2	as	0	GT-AG	
+irC	chr1	+	22180	23860	2	as	1	GT-AG	
+irD	chr1	-	25060	26780	2	as	0	GT-AG	
+a5A	chr1	+	27980	29630	2	as	0	GT-AG	
+a5B	chr1	-	30830	32380	2	as	0	GT-AG	
+a5C	chr1	+	33580	35160	2	as	0	GT-AG	
+a3A	chr1	+	36360	38010	2	as	0	GT-AG	
+a3B	chr1	-	39310	40870	2	as	0	GT-AG	
+a3C	chr1	+	42070	43620	2	as	0	GT-AG	
+mxeA	chr1	+	44820	46770	2	as	0	GT-AG	
+mxeB	chr1	-	47970	49930	2	as	0	GT-AG	
+cpxA	chr1	+	51130	52780	2	as	0	GT-AG	
+cpxB	chr1	-	53980	55620	2	as	0	GT-AG	
+irseA	chr1	+	56820	58740	3	as	0	GT-AG	
+tssA	chr1	+	59940	61540	2	as	0	GT-AG	
+tssB	chr1	-	62860	64440	2	as	0	GT-AG	
+longA	chr1	+	65840	82990	2	as	0	GT-AG	long_intron
+longB	chr1	-	84190	102380	2	as	0	GT-AG	long_intron
+wobbleA	chr1	+	103580	105230	2	as	0	GT-AG	
+wobbleB	chr1	-	106430	108090	2	as	0	GT-AG	
+wobbleC	chr1	+	109290	110930	2	as	0	GT-AG	
+lowA	chr1	+	112130	113680	2	as	0	GT-AG	
+lowB	chr1	-	114880	116390	2	as	0	GT-AG	2-read LR-only novel isoform: fails the legacy junction-combination consensus in every NGS configuration
+nullA	chr1	+	117590	119110	2	as	0	GT-AG	
+nullB	chr1	-	120310	121820	2	as	0	GT-AG	
+monoA	chr2	+	2700	3500	1	mono_exon	0	GT-AG	
+monoB	chr2	-	4700	5300	1	mono_exon	1	GT-AG	
+monoC	chr2	+	6500	7000	1	mono_exon	0	GT-AG	novel_mono
+diA	chr2	+	8200	9400	2	di_exon	0	GT-AG	
+diB	chr2	-	10600	11850	1	di_exon	0	GT-AG	
+microA	chr2	+	13050	14380	2	as	0	GT-AG	small_exon_30bp
+microB	chr2	-	15580	16879	2	as	0	GT-AG	micro_exon_9bp
+microC	chr2	+	18079	19374	2	as	0	GT-AG	micro_exon_15bp
+antiA	chr2	+	20574	22274	2	antisense_pair	0	GT-AG	
+antiB	chr2	-	20874	22074	1	antisense_pair	0	GT-AG	overlaps antiA
+antiC	chr2	+	23474	25324	1	antisense_pair	0	GT-AG	
+antiD	chr2	-	23804	24844	1	antisense_pair	0	GT-AG	shares antiC intron 0 coordinates
+nearA	chr2	+	26524	28044	2	adjacent	0	GT-AG	
+nearB	chr2	+	28244	29774	1	adjacent	0	GT-AG	
+noncanA	chr2	+	30974	32524	1	as	0	GT-AG	noncanonical_intron0
+gcagA	chr2	-	33724	35294	2	as	0	GC-AG	
+atacA	chr2	+	36494	38054	1	as	0	AT-AC	
+asasA	chr2	+	39254	40844	2	asas	0	GT-AG	
+asasB	chr2	-	42044	43584	2	asas	0	GT-AG	
+asasC	chr2	+	44784	46384	2	asas	0	GT-AG	
+asasD	chr2	-	47584	49154	2	asas	0	GT-AG	
+asasN1	chr2	+	50354	51924	2	asas_null	0	GT-AG	
+asasN2	chr2	-	53124	54664	2	ase	0	GT-AG	allele-specific expression without splicing bias: both isoforms 85% hapA (ASAS negative, ASE positive)
+teA	chr2	+	55864	58414	2	as	0	GT-AG	te_repeat_in_intron0
+endA	chr4	+	2700	4250	2	as	0	GT-AG	near_chrom_end
+monoD	chr4	-	4550	5000	1	mono_exon	0	GT-AG	
+genePU01	chr3	+	1900	2680	2	pu_background	0	GT-AG	
+genePU02	chr3	-	3080	3860	2	pu_background	0	GT-AG	
+genePU03	chr3	+	4260	5040	2	pu_background	0	GT-AG	
+genePU04	chr3	-	5440	6220	2	pu_background	0	GT-AG	
+genePU05	chr3	+	6620	7400	2	pu_background	0	GT-AG	
+genePU06	chr3	-	7800	8580	2	pu_background	0	GT-AG	
+genePU07	chr3	+	8980	9760	2	pu_background	1	GT-AG	
+genePU08	chr3	-	10160	10940	2	pu_background	0	GT-AG	
+genePU09	chr3	+	11340	12120	2	pu_background	0	GT-AG	
+genePU10	chr3	-	12520	13300	2	pu_background	0	GT-AG	
+genePU11	chr3	+	13700	14480	2	pu_background	0	GT-AG	
+genePU12	chr3	-	14880	15660	2	pu_background	0	GT-AG	
+genePU13	chr3	+	16060	16840	2	pu_background	0	GT-AG	
+genePU14	chr3	-	17240	18020	2	pu_background	1	GT-AG	
+genePU15	chr3	+	18420	19200	2	pu_background	0	GT-AG	
+genePU16	chr3	-	19600	20380	2	pu_background	0	GT-AG	
+genePU17	chr3	+	20780	21560	2	pu_background	0	GT-AG	
+genePU18	chr3	-	21960	22740	2	pu_background	0	GT-AG	
+genePU19	chr3	+	23140	23920	2	pu_background	0	GT-AG	
+genePU20	chr3	-	24320	25100	2	pu_background	0	GT-AG	
+genePU21	chr3	+	25500	26280	2	pu_background	1	GT-AG	
+genePU22	chr3	-	26680	27460	2	pu_background	0	GT-AG	
+genePU23	chr3	+	27860	28640	2	pu_background	0	GT-AG	
+genePU24	chr3	-	29040	29820	2	pu_background	0	GT-AG	
+genePU25	chr3	+	30220	31000	2	pu_background	0	GT-AG	
+genePU26	chr3	-	31400	32180	2	pu_background	0	GT-AG	
+genePU27	chr3	+	32580	33360	2	pu_background	0	GT-AG	
+genePU28	chr3	-	33760	34540	2	pu_background	1	GT-AG	
+genePU29	chr3	+	34940	35720	2	pu_background	0	GT-AG	
+genePU30	chr3	-	36120	36900	2	pu_background	0	GT-AG	

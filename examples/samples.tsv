@@ -1,0 +1,4 @@
+sample_name	project_name	ref_strain	strain	condition	replicate	tgs_plat	strategy	data_location	primer	ngs_left_reads	ngs_right_reads	ngs_reads_paired	ngs_reads_length	use_fmlrc2	fast5_dir
+B73_root_rep1	demo	B73	B73	root	rep1	pacbio	sequel	raw/B73.subreads.bam	raw/primer.fa	ngs/B73_root_R1.fastq.gz	ngs/B73_root_R2.fastq.gz	paired	150	true	None
+B73_root_rep2	demo	B73	B73	root	rep2	None	None	None	None	ngs/B73_root_rep2_R1.fastq.gz	ngs/B73_root_rep2_R2.fastq.gz	paired	150	true	None
+B73_leaf_rep1	demo	B73	B73	leaf	rep1	pacbio	sequel	raw/B73_leaf.subreads.bam	raw/primer.fa	ngs/B73_leaf_R1.fastq.gz	ngs/B73_leaf_R2.fastq.gz	paired	150	true	None

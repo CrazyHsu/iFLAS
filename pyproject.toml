@@ -1,0 +1,48 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "iflas"
+version = "2.0.0b1"
+description = "iFLAS: integrated Full-Length Alternative Splicing analysis"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{ name = "Xu Feng", email = "xufeng9527@cau.edu.cn" }]
+keywords = ["alternative-splicing", "isoseq", "nanopore", "transcriptomics", "PacBio"]
+
+# Python dependencies. The external programs (minimap2, samtools, hisat2, stringtie, ccs/isoseq,
+# nanopolish, rMATS, R, ...) come from the conda environment files; see README.md.
+dependencies = [
+    "numpy",
+    "pandas",
+    "scipy",
+    "scikit-learn",   # PU learning (iso_pu / baggingPU)
+    "matplotlib",
+    "networkx",
+    "biopython",
+    "pysam",          # replaces PyVCF in asas
+    "pybedtools",
+    "pyyaml",         # YAML config
+    "pydantic>=2",    # config validation
+    "pypdf",          # replaces PyPDF2
+    "pymupdf",        # fitz: PDF->PNG rendering in report HTML
+    "yattag",         # HTML report
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "pytest-cov", "ruff"]
+
+[project.scripts]
+iflas = "iflas.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/iflas"]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 120
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--import-mode=importlib"

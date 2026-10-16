@@ -1,0 +1,66 @@
+# iFLAS default conda environment (Python 3).
+# Version ranges bracket the tested set; envs/lock/iflas.linux-64.txt (+ iflas.pip.txt) pins the exact builds.
+#   conda env create -f environment.yml      # (libmamba solver, conda >=23, is fast)
+#   conda activate iflas
+#   pip install -e .
+#
+# This is the core environment. cDNA_Cupcake, the PacBio tools and the R/rMATS stack have their own
+# environment files (environment-cupcake.yml, environment-pacbio.yml, environment-diffsplice.yml)
+# because they need other Python or R versions; iFLAS runs those programs inside their environments.
+name: iflas
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python=3.11
+  - pip
+  # --- Python libraries (iFLAS itself) ---
+  - "numpy>=2.0,<2.5"
+  - "pandas>=2.2,<3"
+  - "scipy>=1.13,<1.18"
+  - "scikit-learn>=1.5,<1.10"          # PU learning (iso_pu / baggingPU)
+  - "matplotlib-base>=3.8,<3.9"
+  - "networkx>=3,<4"
+  - "biopython>=1.80,<2"
+  - "pysam>=0.22,<0.25"                 # replaces PyVCF in asas
+  - "pybedtools>=0.10,<0.13"
+  - "pyyaml>=6,<7"                # YAML config
+  - "pydantic>=2,<3"         # config validation
+  - "pypdf>=4,<7"                 # replaces PyPDF2 (report.py PDF merge)
+  - "yattag>=1.15,<2"                # HTML report
+  # pymupdf (fitz; generateHtml PDF->PNG) is installed via pip (see pyproject.toml):
+  #   the conda build conflicts with this env's openssl pin, the pip wheel does not.
+  # --- read alignment / assembly / RNA tools ---
+  - "minimap2>=2.26,<3"
+  - "hisat2>=2.2,<2.3"
+  - "samtools>=1.17,<2"
+  - "bedtools>=2.30,<2.32"
+  - "stringtie>=3,<4"
+  - "subread>=2.0,<2.2"               # featureCounts
+  - "regtools>=1.0,<2"
+  - "seqkit>=2.5,<3"
+  - "fastp>=0.23,<2"
+  - "gffread>=0.12,<0.13"             # GFF3 annotation -> GTF (iflas init-ref --gff)
+  - ucsc-gtftogenepred
+  - ucsc-genepredtogtf
+  # --- long-read hybrid correction (preproc) ---
+  - "fmlrc2>=0.1.7,<0.2"
+  - ropebwt2
+  # --- PacBio Iso-Seq tools are ISOLATED in environment-pacbio.yml ---
+  #     pbcoretools only ships python<=3.7 builds, which would pin this whole env
+  #     off Python 3.11. iFLAS runs them inside the iflas-pacbio env (ToolRunner activates it).
+  #     (They are standalone programs; iFLAS only calls them.)
+  # --- ONT poly(A) tail length (CPU; basecalling is an external GPU step) ---
+  - "nanopolish>=0.14,<0.15"
+  # --- allele-specific expression (asas -ase): SNP calling, read tagging, haplotype quantification ---
+  - "freebayes>=1.3,<1.4"
+  - "bcftools>=1.17,<2"
+  - "bamtools>=2.5,<2.6"           # `bamtools split` of the hybrid NGS BAM (ase)
+  - "openjdk>=11"            # utils/biostar214299.jar tags NGS reads by SNP allele (ase)
+  - "salmon>=1.10,<3"
+  # --- visualization (replaces SpliceGrapher) ---
+  - "pygenometracks>=3.9,<3.10"
+  - tqdm               # imported by pygenometracks but missing from its conda package metadata
+  - pip:
+    - "ont-fast5-api>=4,<5"     # writes the fabricated fast5 of scripts/make_fake_fast5.py (nanopolish plumbing test)
+    - setuptools<80     # pkg_resources, imported by ont-fast5-api

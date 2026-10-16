@@ -1,519 +1,398 @@
-# iFLAS: an <u>i</u>ntegrated <u>F</u>ull <u>L</u>ength <u>A</u>lternative <u>S</u>plicing analysis tool
+# iFLAS: an integrated Full-Length Alternative Splicing analysis tool
 
-iFLAS is a "one-stop" alternative splicing (AS) analysis tool based on full-length transcriptome, aiming to provide a general analysis framework with diverse functions, accurate results and simple operation for the field of plant full-length AS. In order to achieve this goal, iFLAS integrates a variety of analysis methods and tools for different analysis purposes, and completes comprehensive analysis of alternative splicing through three main modules: 1) basic data processing module, 2) isoform and AS identification module, and 3) functional AS analysis module. 
+iFLAS is a "one-stop" alternative splicing (AS) analysis tool for full-length transcriptome data. It aims to provide a
+general analysis framework for plant full-length AS studies, with diverse functions, accurate results and simple
+operation. iFLAS integrates a number of analysis methods and tools, and analyses alternative splicing in three main
+modules: 1) basic data processing, 2) isoform and AS identification, and 3) functional AS analysis.
 
-The basic data processing module employs optimized analysis pipelines to handle transcriptome data from different sequencing platforms, including preprocessing of raw data, sequence alignment, isoform redundancy removal, and splice site correction. The high-quality annotation of splice junctions from Illumina RNA-seq ensures the rationality of isoform structures. 
+The basic data processing module handles transcriptome data from different sequencing platforms, including
+preprocessing of raw data, sequence alignment, removal of redundant isoforms and correction of splice sites. Splice
+junctions from Illumina RNA-seq are used to check the isoform structures.
 
-The isoform and AS identification module utilizes PU learning for precise isoform identification and accurately characterizes AS events based on a hybrid-sequencing analysis strategies, which alleviates the issue of missing alternative intron commonly met in NGS analysis and provides a more reliable AS analysis results for plants.
+The isoform and AS identification module uses PU learning to identify novel isoforms, and characterizes AS events with a
+hybrid-sequencing strategy, which reduces the problem of missing alternative introns that is common in NGS analysis.
 
-The functional AS analysis module performs various functions, including identification of differentially spliced events, characterization of allele-specific splicing events, detection of differential 3' poly(A) tails between splice isoforms, and GO functional enrichment analysis, thereby offering multiple novel insights for plant alternative splicing analysis. Additionally, the visualization and reporting module provides a statistical summary of the analysis results, ensuring the interpretability of the findings.
+The functional AS analysis module identifies differentially spliced events, allele-specific splicing events and
+differences in 3' poly(A) tail length between splice isoforms, and performs GO enrichment analysis. The visualization
+and report functions summarize the results in plots and an HTML report.
 
-<img src="images\iFLAS_workflow.png" alt="iFLAS_workflow" style="zoom:20%;" />
+<img src="images/iFLAS_workflow.png" alt="iFLAS workflow" width="720">
 
+This is iFLAS 2.0.0b1, the Python 3 version of iFLAS. The version described in our paper (Python 2, here called
+iFLAS 1) is kept under the tag [legacy-py2](https://github.com/CrazyHsu/iFLAS/tree/legacy-py2).
+
+We have tested this version on simulated data, including reads simulated from the maize B73 v5 reference
+(see [section 7](#7-testing)). It has not yet been run on real sequencing data, so please treat it as a beta release
+and report problems in [Issues](https://github.com/CrazyHsu/iFLAS/issues).
+
+Main changes from iFLAS 1:
+
+- iFLAS runs on Python 3.10 or newer. iFLAS 1 needs Python 2.7.
+- All dependencies are installed from conda environment files. Nothing has to be built by hand.
+- A YAML configuration file and a sample table replace the .cfg file. `iflas migrate-config` converts an old .cfg file.
+- `iflas init-ref` prepares the reference files from a genome FASTA and a GTF or GFF3 annotation.
+- `iflas all` runs the whole pipeline. Each step can still be run on its own.
+- Current versions of the external tools are used (ccs 6.4, lima and isoseq 26, minimap2 2.31, HISAT2 2.2.2,
+  StringTie 3, cDNA_Cupcake 29, rMATS 4.4, R 4.5 with Bioconductor 3.22). Gene structure plots are drawn with
+  pyGenomeTracks.
+- Nanopore reads can be given as FASTQ files or as dorado BAM files. Poly(A) tail lengths come from nanopolish or
+  from dorado.
+- Many bugs are fixed. Some of the fixes change the results. They are listed in [CHANGELOG.md](CHANGELOG.md),
+  together with the settings that restore the behaviour of iFLAS 1 where such settings exist.
 
 
 ## 1. Installation
 
-### 1.1 Installation using conda
-
-We recommend using conda to substantially facilitate installation of all Python dependencies. Please follow the steps here to ensure an error-free installation. The installation will be done just once, and all the dependencies will be installed automatically in a conda environment. When the environment has been entirely built, you can print the help prompt. If no errors are thrown, it indicates that iFLAS has been successfully installed.
+iFLAS runs on Linux and has been tested on x86-64. We recommend installing it with conda (version 23.10 or newer, or
+mamba). iFLAS uses four conda environments. The core environment `iflas` contains iFLAS and most of the tools.
+cDNA_Cupcake, the PacBio tools and the R packages need other versions of Python or R, so they have their own
+environments. iFLAS finds these environments by name and runs the programs inside them.
 
 ```bash
-# Create conda enviroment named iflas
-conda create -y -n iflas python=2.7
-conda activate iflas
-
-# Install dependencies
-conda install -y -c bioconda samtools=1.9 hisat2 bedtools=2.29.2 bamtools subread stringtie minimap2 seqkit fastp
-conda install -y -c bioconda ucsc-gtftogenepred ucsc-genepredtogtf fmlrc2=0.1.4 nanopolish=0.11.1 regtools=0.5.2
-conda install -y -c bioconda isoseq3=3.3 pbccs=4.2 lima pbcoretools rmats=4.0.2 bax2bam pbbam=1.0.6 pbcopper=1.3.0
-conda install -y -c conda-forge r-base=3.6.3 rpy2=2.8.6 r-scales
-conda install -y -c bioconda bioconductor-deseq2=1.26.0 bioconductor-clusterprofiler=3.14.0 bioconductor-gviz=1.30.0
-conda install -y r-stringi=1.4.6 r-dplyr=1.0.0 r-tibble=3.0.0 r-gridBase
-
-pip install pandas matplotlib==2.2.3 psutil biopython==1.68 pybedtools PyVCF PyPDF2 PyMuPDF-1.17.7 bx-python==0.7.3 networkx==2.2
-
-R -e "install.packages('tidyr')"
-R -e "install.packages('valr')"
-
-# install Cupcake
-git clone https://github.com/CrazyHsu/cDNA_Cupcake.git
-cd cDNA_Cupcake
-git checkout Py2_v8.7.x
-python setup.py build && python setup.py install
-cd ../
-
-# install SpliceGrapher
-git clone https://github.com/CrazyHsu/SpliceGrapher_packages.git
-cd SpliceGrapher_packages
-tar -xf PyML-0.7.14.tar.gz
-cd PyML-0.7.14
-python setup.py build && python setup.py install
-cd ../
-tar -xf SpliceGrapher-0.2.7.tgz
-cd SpliceGrapher-0.2.7
-python setup.py build && python setup.py install
-cd ../
-cd ../
-
-# clone iFLAS package
-git clone https://github.com/CrazyHsu/iFLAS.git
+git clone -b py3 https://github.com/CrazyHsu/iFLAS.git
 cd iFLAS
-python iFLAS.py -h
+
+# core environment
+conda env create -f environment.yml
+conda activate iflas
+pip install -e .
+
+# cDNA_Cupcake, used by collapse and asas
+conda env create -f environment-cupcake.yml
+# ccs, lima and isoseq, used by preproc for PacBio raw data
+conda env create -f environment-pacbio.yml
+# rMATS and R, used by diff_as, go, characterize and report
+conda env create -f environment-diffsplice.yml
+
+iflas -h
 ```
 
-### 1.2 Installation using Docker
-
-Of course, it is also possible to get iFLAS using Docker image. If you have not installed Docker, you should first install Docker according to the official tutorial (https://docs.docker.com/engine/install/). Then, pull iFLAS Image from DockerHub and print the help prompt. If no errors are thrown, it indicates that iFLAS has been successfully installed.
+The environment files allow a range of versions around the ones we tested. To install exactly the tested versions
+(Linux x86-64), use the lock files in `envs/lock`:
 
 ```bash
-docker pull CrazyHsu/iFLAS:lastest
-docker run CrazyHsu/iFLAS:lastest iflas.py -h
+conda create -n iflas --file envs/lock/iflas.linux-64.txt
+conda activate iflas
+pip install -r envs/lock/iflas.pip.txt
+pip install -e .
+conda create -n iflas-cupcake --file envs/lock/iflas-cupcake.linux-64.txt
+conda run -n iflas-cupcake pip install -r envs/lock/iflas-cupcake.pip.txt
+conda create -n iflas-pacbio --file envs/lock/iflas-pacbio.linux-64.txt
+conda create -n iflas-diffsplice --file envs/lock/iflas-diffsplice.linux-64.txt
 ```
 
+iFLAS activates the other environments directly. If this does not work on your system, set `IFLAS_CONDA_RUN=1` and
+iFLAS will use `conda run` instead. To use an R installation outside conda, set `IFLAS_R_CONDA_ENV=local`.
 
 
-## 2. Overview of the functions and primary tools or methods used in iFLAS
+## 2. Functions
 
-### 2.1 The function options of iFLAS
+```
+$ iflas -h
+usage: iflas [-h] [-V] <command> ...
 
-``````bash
-$ python iflas.py -h
-usage: iflas.py command [options]
-
-iFLAS: integrated Full Length Alternative Splicing analysis
-
-optional arguments:
-  -h, --help     show this help message and exit
+iFLAS: integrated Full-Length Alternative Splicing analysis
 
 command:
-  
-    preproc      Pre-process the raw PacBio/NanoPore/NGS data. When TGS and
-                 NGS data both are provide, This step will use fmlrc2 to
-                 correct the TGS read with the information in NGS
-    mapping      Mapping the TGS/NGS reads to the reference genome with
-                 minimap2
-    collapse     Collapse corrected reads into high-confidence isoforms
-    refine       Refine the splice junction with the information in short
-                 reads
-    pu_filter    Filter Low-Quality novel isoforms using a PU-learning based
-                 method
-    find_as      Identify alternative splicing(AS) type from high-confidence
-                 isoforms. Four common AS type are included: intron retention,
-                 exon skipping, alternative 3 end splicing and alternative 5
-                 end splicing
-    visual_as    Visualize the specific gene structure with details including
-                 isoform mapping, short reads coverage and AS types identified
-    asas         Identify allele-specific AS
-    palen_as     Identify functional poly(A) tail length related to AS
-    diff_as      Carry out differential AS ananlysis among conditions
-    go           Perform GO enrichment analysis and plot results for the
-                 specified gene set or multiple gene sets
-    report       Automatic detect the plots generated in each step, and merge
-                 them into a report file
-``````
+  <command>
+    init-ref      Prepare the reference files and indexes from a genome FASTA and a GTF or GFF3.
+    migrate-config
+                  Convert an iFLAS 1 .cfg file into config.yaml and samples.tsv.
+    all           Run the whole pipeline (preproc to palen_as) or selected stages.
+    preproc       Preprocess raw PacBio, Nanopore and NGS reads (ccs, lima, isoseq, fastp, fmlrc2).
+    mapping       Map long reads (minimap2) and NGS reads (HISAT2) to the genome; NGS junctions with regtools.
+    collapse      Collapse corrected reads into high-confidence isoforms (cDNA_Cupcake).
+    refine        Correct isoform strands and junctions (with NGS junctions) and assign isoforms to genes.
+    pu_filter     Remove low-quality novel isoforms with PU learning.
+    find_as       Identify AS events (IR, SE, A3SS, A5SS) from the high-confidence isoforms.
+    find_pa       Identify poly(A) sites and APA in a sample (-b), or only cluster poly(A) sites.
+    characterize  Summarize AS events: annotated and confident event lists, splice-site tables and comparison with the
+                  reference.
+    visual_as     Plot gene structures: reference models, iFLAS isoforms, NGS coverage and junctions (pyGenomeTracks).
+    diff_as       Differential AS between conditions with rMATS (from config.yaml and samples.tsv, or a BAM table).
+    asas          Identify allele-specific AS: phase the full-length reads of each locus with IsoPhase (--ref-genome
+                  and --flnc) and test the haplotypes against AS isoform pairs.
+    palen_as      Compare poly(A) tail lengths between AS isoforms and between APA sites (nanopolish or dorado tails).
+    go            GO enrichment analysis and plots for one or more gene sets.
+    report        Make plots and an HTML report from the finished stages.
+```
 
-### 2.2 Basic data process module
+`iflas <command> -h` shows the options of each command.
 
-| Function name |                      Brief descriptions                      |                   Primary tools or methods                   |
-| :-----------: | :----------------------------------------------------------: | :----------------------------------------------------------: |
-|   *preproc*   |            Raw data preprocessing  and filtering             | [ccs (v4.2.0)](https://ccs.how/), [lima (v2.0.0)](https://lima.how/), [isoseq3 (v3.3.0)](https://isoseq.how/), guppy (v3.4.5), [Fastp(v0.20.1)](https://github.com/OpenGene/fastp), [SeqKit (v0.16.0)](https://bioinf.shenwei.me/seqkit/), [fmlrc2 (v0.1.4)](https://github.com/HudsonAlpha/fmlrc2) |
-|   *mapping*   |                Long and short reads alignment                | [Minimap2 (v2.18-r1015)](https://github.com/lh3/minimap2), [Hisat2 (v2.2.0)](http://daehwankimlab.github.io/hisat2/), [Regtools (v0.5.2)](http://www.regtools.org/) |
-|  *collapse*   |          Collapsing isoforms  to reduce redundancy           | [Cupcake (vPy2_v8.7x)](https://github.com/Magdoll/cDNA_Cupcake) |
-|   *refine*    | Correction of splicing site bias due to sequencing errors and  alignment algorithm preference |                       In-house scripts                       |
+| Function | Description | Main tools (tested versions) |
+| :-- | :-- | :-- |
+| preproc | Raw data preprocessing and filtering; correction of long reads with NGS reads | ccs 6.4.0, lima 26.2.1, isoseq 26.2.0, fastp 1.3.3, fmlrc2 0.1.8 |
+| mapping | Alignment of long and short reads | minimap2 2.31, HISAT2 2.2.2, StringTie 3.0.3, regtools 1.0.0 |
+| collapse | Collapsing reads into isoforms | cDNA_Cupcake 29 |
+| refine | Correction of strands and splice sites, assignment of isoforms to genes | In-house scripts |
+| pu_filter | Filtering of novel isoforms by PU learning | In-house scripts, scikit-learn 1.9, CPC2 |
+| find_as | Identification of AS events at the isoform level | In-house scripts |
+| find_pa | Poly(A) sites and alternative polyadenylation | In-house scripts |
+| characterize | Summary of AS events | In-house scripts, R 4.5.3 |
+| visual_as | Gene structure plots | pyGenomeTracks 3.9 |
+| diff_as | Differential AS between conditions | rMATS 4.4.0 |
+| asas | Allele-specific AS and allele-specific expression | IsoPhase (cDNA_Cupcake 29), freebayes 1.3.10, salmon 2.8.0 |
+| palen_as | Poly(A) tail length differences between AS isoforms and between APA sites | nanopolish 0.14.0, or dorado tail estimates |
+| go | GO enrichment analysis | clusterProfiler 4.18.4 |
+| report | Plots and HTML report | R 4.5.3, Gviz 1.54.0 |
 
-### 2.3 Isoform and AS identification module
-
-| Function name |                      Brief descriptions                      | Primary tools or methods |
-| :-----------: | :----------------------------------------------------------: | :----------------------: |
-|   *pu_iso*    | Novel isoform filtration based  on PU learning PU-based isoform  filtration method |     In-house scripts     |
-|   *find_as*   |    Identify alternative splicing events at isoform level     |     In-house scripts     |
-
-### 2.4 Functional AS analysis module
-
-| Function name |                      Brief descriptions                      |                   Primary tools or methods                   |
-| :-----------: | :----------------------------------------------------------: | :----------------------------------------------------------: |
-|  *allele_as*  |    Determine allele-specific  alternative splicing events    | [IsoPhase (vPy2_v8.7x)](https://github.com/Magdoll/cDNA_Cupcake) |
-|  *palen_as*   | Detect isoforms with differential poly(A) tail length in a  gene |  [nanopolish (v0.11.1)](https://github.com/jts/nanopolish)   |
-|   *diff_as*   | Identify differential alternative splicing events between  samples | [rMATS (v3.1.0)](https://github.com/Xinglab/rmats-turbo), [DESeq2 (v1.26.0)](https://bioconductor.org/packages/release/bioc/html/DESeq2.html) |
-|     *go*      |   GO enrichment analysis of/between candidate genes (sets)   | [clusterProfiler (v3.14.0)](https://bioconductor.org/packages/release/bioc/html/clusterProfiler.html) |
-
-### 2.5 Result visualization
-
-| Function name |              Brief descriptions               |                   Primary tools or methods                   |
-| :-----------: | :-------------------------------------------: | :----------------------------------------------------------: |
-|  *visual_as*  | Visualization of  alternative splicing events | [SpliceGrapher (v0.2.7)](https://splicegrapher.sourceforge.net/), [Gviz (v1.30.0)](https://www.bioconductor.org/packages/devel/bioc/vignettes/Gviz/inst/doc/Gviz.html) |
-|   *report*    |   Generate HTML format reports for results    |         [Yattag (v1.14.0)](https://www.yattag.org/)          |
+[docs/external_tools.md](docs/external_tools.md) lists all external tools and how their command lines differ from the
+versions used by iFLAS 1.
 
 
+## 3. Preparing the reference
 
-## 3. Option details in each function of iFLAS
-
-The operation of iFLAS is simple, and the analysis can be completed by a command similar to 'python iflas.py function -c config.cfg'. In this command, 'function' represents the name of the sub-function, such as *preproc* function mentioned earlier, which is used for preprocessing and correction of raw data. '-c config.cfg' specifies the [configuration file](test_data/config.cfg) to be used for the run, in which iFLAS adopts the standard format used by Python [*ConfigParser*](https://docs.python.org/2.7/library/configparser.html) module, and you only need to modify the configuration file according to your needs. Of course, iFLAS also supports direct parameter setting through the command line, further enhancing the flexibility of the software.
-
-### **3.1 Data preprocessing (*preproc*)** 
+`iflas init-ref` derives the files iFLAS needs from a genome FASTA and a gene annotation, and prints the lines to put
+under `reference:` in config.yaml.
 
 ```bash
-python iflas.py preproc -cfg config.cfg
+iflas init-ref -f genome.fa --gtf genes.gtf -o ref/ --hisat2 -t 8
 ```
 
-Usage for *preproc* function
+It writes a genePred file (`.gpe`), a BED12 file with gene names (`.bed`), the chromosome sizes (`.len.txt`), a minimap2
+index (`.mm2`) and, with `--hisat2`, a HISAT2 index. A GFF3 annotation is converted with gffread (`--gff` instead of
+`--gtf`). Compressed files can be given directly; they are decompressed into the output directory. For example, for the
+maize B73 v5 reference from MaizeGDB:
 
 ```bash
-usage: iflas.py preproc [options]
-
-optional arguments:
-  -h, --help        show this help message and exit
-  -cfg DEFAULT_CFG  The config file used for init setting.
-  -merge            Merge all samples from a same strain.
+wget https://download.maizegdb.org/Zm-B73-REFERENCE-NAM-5.0/Zm-B73-REFERENCE-NAM-5.0.fa.gz
+wget https://download.maizegdb.org/Zm-B73-REFERENCE-NAM-5.0/Zm-B73-REFERENCE-NAM-5.0_Zm00001eb.1.gff3.gz
+iflas init-ref -f Zm-B73-REFERENCE-NAM-5.0.fa.gz --gff Zm-B73-REFERENCE-NAM-5.0_Zm00001eb.1.gff3.gz -o ref/ --hisat2 -t 16
 ```
 
-### **3.2 Use fmlrc2 to correct sequencing errors during the mapping (_mapping_)**
+With 16 threads this took 14 minutes. The peak memory, 10 GB, was used by hisat2-build.
+
+For GO enrichment, iFLAS needs a table of genes and GO terms (tab-separated, with the header `gene` and `go`, one term
+per line), given as `options.gene2go` in config.yaml. The GO table of MaizeGDB can be converted like this:
 
 ```bash
-python iflas.py mapping -cfg config.cfg -c -jcs <min_junction_support_count>
+wget https://download.maizegdb.org/Zm-B73-REFERENCE-NAM-5.0/Zm-B73-REFERENCE-NAM-5.0-GMs-GOTerms.csv.gz
+python - <<'EOF'
+import csv, gzip, re
+with gzip.open("Zm-B73-REFERENCE-NAM-5.0-GMs-GOTerms.csv.gz", "rt") as f, open("gene2go.tsv", "w") as out:
+    out.write("gene\tgo\n")
+    for row in csv.DictReader(f):
+        for term in sorted(set(re.findall(r"GO:\d{7}", row["obo_terms"] or ""))):
+            out.write(f"{row['gene_model']}\t{term}\n")
+EOF
 ```
 
-Usage for *mapping* function
+
+## 4. Configuration
+
+A run is described by two files: `config.yaml` with the reference and the parameters, and `samples.tsv` with one row
+per sequencing library. Templates are in [examples/](examples/). Relative paths in both files are taken relative to the
+directory of the file, and `${NAME}` is replaced by the environment variable `NAME`. Mistakes such as an unknown
+`ref_strain`, a misspelled key or a wrong value type are reported before anything runs. An iFLAS 1 configuration file
+can be converted with:
 
 ```bash
-usage: iflas.py mapping [options]
-
-optional arguments:
-  -h, --help        show this help message and exit
-  -cfg DEFAULT_CFG  The config file used for init setting.
-  -merge            Merge all samples from a same strain.
-  -c                Correct the flnc reads with fmlrc2.
-  -jcs JUNCCOMBSUP  The number of junction combination supported by flnc
-                    reads. Default: 2.
+iflas migrate-config old.cfg -o config.yaml -s samples.tsv
 ```
 
-### **3.3 Isoform collapsing (_collapse_)**
+Sections of `config.yaml`:
+
+| Section | Content |
+| :-- | :-- |
+| reference | One entry per reference strain: `ref_strain`, `ref_genome`, `ref_gtf`, and the files printed by `iflas init-ref` |
+| ccs, minimap2, collapse, pu_filter | Parameters of these steps. `minimap2.max_intron_length` (default 50000) also limits the introns kept after mapping. `pu_filter.random_state` seeds PU learning, so repeated runs give the same scores |
+| options | `threads`, `memory`, `gene2go`, `merge_data_from_same_strain`, `ont_trim_polya`, `asas_ngs_confirm` (see below) |
+| dirs | `out_dir` for the results; `tmp_dir` for temporary files (set it on servers with a small `/tmp`) |
+
+Columns of `samples.tsv` (empty cells or `None` mean "not given"):
+
+| Column | Content |
+| :-- | :-- |
+| sample_name | Name of the library |
+| project_name | Project name, used in the output directories |
+| ref_strain | The `reference` entry to use |
+| strain | Strain of the library. Libraries of the same strain are merged (see below) |
+| condition, replicate | Condition and replicate, used by diff_as |
+| tgs_plat | `pacbio` or `nanopore`; empty for NGS-only libraries |
+| strategy | For PacBio: `sequel` (subreads or CCS/HiFi BAM) or `rsii` |
+| data_location | Raw long reads. PacBio: subreads BAM, CCS/HiFi BAM or a directory of them. Nanopore: FASTQ (gzip allowed), a directory of FASTQ files, or a dorado BAM |
+| primer | PacBio primer FASTA for lima |
+| data_processed_location | Full-length reads that are already processed (FASTA or FASTQ); the raw-data step is skipped |
+| polya_location | An existing poly(A) tail table (nanopolish `polya_results.tsv`) |
+| fast5_dir | Raw nanopore signal (fast5) of the reads, for nanopolish |
+| ngs_left_reads, ngs_right_reads | NGS reads (FASTQ, gzip allowed) |
+| ngs_reads_paired, ngs_reads_length | `paired` or `single`, and the read length (used by rMATS) |
+| ngs_junctions | Optional junction BED file to use instead of the one from HISAT2 |
+| use_fmlrc2 | Correct the long reads with the NGS reads of the same row using fmlrc2 (`true` or `false`) |
+
+Notes on some settings:
+
+- `options.merge_data_from_same_strain` (default `true`): `preproc` runs on each row, and the later steps run on one
+  merged sample per strain, named `<strain>_all`. Merging pools the NGS libraries of a strain, so diff_as is skipped
+  in this mode (see section 5).
+- `options.ont_trim_polya` (default `true`): the basecalled 3' poly(A) of nanopore direct RNA reads is cut before
+  mapping. The raw reads are kept for nanopolish. `false` gives the iFLAS 1 behaviour, which loses about a third of
+  the nanopore reads in collapse.
+- `options.asas_ngs_confirm` (default `true`): allele-specific AS and allele-specific expression are only reported for
+  phased loci with at least one SNP that freebayes also finds in the NGS reads. IsoPhase sometimes reads alignment
+  differences at splice sites as SNPs. `false` gives the iFLAS 1 behaviour.
+- Nanopore fast5 files: if `data_location` is a fast5 directory, iFLAS calls Guppy (`guppy_basecaller`), which has to
+  be installed separately and needs a GPU. Guppy is no longer developed, so we suggest basecalling with dorado
+  elsewhere, giving the FASTQ or BAM file as `data_location` and the fast5 directory as `fast5_dir`. nanopolish reads
+  fast5 only; POD5 files have to be converted first. For RNA004 data, dorado's own tail estimates
+  (`dorado basecaller --estimate-poly-a`, kept in the BAM file) are used when no fast5 files are given.
+- Large genomes: chromosomes longer than 536,870,911 bp get CSI instead of BAI indexes. Plots that read alignments in
+  such regions with Bioconductor's Rsamtools are skipped, because Rsamtools cannot read there.
+
+
+## 5. Running iFLAS
+
+Run the whole pipeline:
 
 ```bash
-python iflas.py collapse -cfg config.cfg
+iflas all -c config.yaml -s samples.tsv
 ```
 
-Usage for *collapse* function
+The steps are preproc, mapping, collapse, refine, pu_filter, find_as, find_pa, characterize, visual_as, diff_as, asas,
+ase and palen_as. A step is skipped, with a message, when a sample does not have the input it needs (for example ase
+without NGS reads, or palen_as without tail lengths). `--stages` runs only the listed steps. Listed steps are not
+skipped for missing input, with one exception: libraries without long reads always skip the long-read steps. `-j`
+sets how many samples are processed at the same time, each with `options.threads` threads.
 
 ```bash
-usage: iflas.py collapse [options]
-
-optional arguments:
-  -h, --help        show this help message and exit
-  -cfg DEFAULT_CFG  The config file used for init setting.
-  -merge            Merge all samples from a same strain.
+iflas all -c config.yaml -s samples.tsv --stages mapping,collapse,refine,pu_filter,find_as
 ```
 
-### **3.4 Junction refinement using RNA-seq alignment results (_refine_)**
+When a run is resumed without `preproc`, iFLAS uses the reads that the earlier `preproc` produced (they are recorded in
+`preprocess/preproc_outputs.json`).
+
+Differential splicing needs separate alignments for each library, so it is run with merging turned off. In the
+example below, `config_conditions.yaml` is a copy of config.yaml with `merge_data_from_same_strain: false` and its own
+`out_dir`:
 
 ```bash
-python iflas.py refine -cfg config.cfg
+iflas all -c config_conditions.yaml -s samples.tsv --stages preproc,mapping,collapse,refine,pu_filter,find_as
+iflas diff_as -c config_conditions.yaml -s samples.tsv -d root,leaf --pu-filter --go
 ```
 
-Usage for *refine* function
+With `--pu-filter`, rMATS uses all high-quality isoforms of the samples. Without it, rMATS only uses isoforms with
+confident AS events, and events that are confident in only one condition can be missed.
+
+The steps can also be run one at a time. `iflas preproc`, `iflas mapping` and `iflas collapse` work on the rows of
+samples.tsv (all rows, or those given with `--sample`) without merging; the other steps work on the files of one
+sample directory:
 
 ```bash
-usage: iflas.py refine [options]
-
-optional arguments:
-  -h, --help        show this help message and exit
-  -cfg DEFAULT_CFG  The config file used for init setting.
-  -merge            Merge all samples from a same strain.
-  -adjust           Adjust the strand orient by the information of junctions.
-  -refine           Refine the junction position by the reads support.
+iflas mapping -c config.yaml -s samples.tsv
+iflas collapse -c config.yaml -s samples.tsv
+iflas refine --collapsed-gff collapse/tofu.collapsed.good.gff --ref-genome genome.fa -r ref/genome.gpe --ref-bed ref/genome.bed -o sample/
+iflas pu_filter -b sample/ --ref-genome genome.fa --ref-bed ref/genome.bed
+iflas find_as -b sample/ -r ref/genome.gpe
+iflas go -tg target_genes.txt -s sample -bg gene2go.tsv
 ```
 
-### **3.5 Identification of reliable new isoforms using PU learning algorithm (_pu_filter_)**
+Plots and the HTML report are made from the finished steps:
 
 ```bash
-python iflas pu_filter -cfg config.cfg 
+iflas report -all -c config.yaml -s samples.tsv
+iflas report -diff -c config_conditions.yaml -s samples.tsv
 ```
 
-Usage for *pu_filter* function
+The report is written to `<out_dir>/reports/html/iflas_report.html`.
+
+
+## 6. Output files
+
+The results of each sample are written to `<out_dir>/<project_name>/<sample>/`:
+
+| Directory | Content |
+| :-- | :-- |
+| preprocess/ | Processed long reads (pacbio/, nanopore/), filtered NGS reads (rna-seq/), corrected reads (fmlrc/) |
+| mapping/ | Long read alignments (`flnc.mm2.sorted.bam`), NGS alignments, StringTie assemblies and junctions (rna-seq/) |
+| collapse/ | Collapsed isoforms from cDNA_Cupcake (`tofu.collapsed.*`) |
+| refine/ | Isoforms assigned to genes (`isoformGrouped.bed12+`), split into annotated and novel isoforms |
+| hqIsoforms/ | High-quality isoforms after PU learning (`hq.collapsed.bed12+`), PU scores and features |
+| as_events/ordinary_as/ | AS events (IR, SE, A3SS, A5SS); `LR/*.confident.*` are the events supported by NGS junctions |
+| as_events/pa/ | Poly(A) sites and clusters |
+| as_events/characterization/ | Annotated and novel event lists, splice-site motifs and summary plots |
+| visual_as/ | Gene structure plots, one directory per gene |
+| asas/, ase/ | Allele-specific AS (phased SNPs, AS events related to haplotypes) and allele-specific expression |
+| palenAS/ | AS isoforms and APA sites with different poly(A) tail lengths |
+
+Differential AS results are written to `<out_dir>/das/` (rMATS output, significant events in `*.sigDiffAS/` and the
+GO results), and plots and the HTML report to `<out_dir>/reports/`.
+
+
+## 7. Testing
 
 ```bash
-usage: iflas.py pu_filter [options]
-
-optional arguments:
-  -h, --help            show this help message and exit
-  -cfg DEFAULT_CFG      The config file used for init setting.
-  -merge                Merge all samples from a same strain.
-  -feature_file FEATURE_FILE
-                        Use user provided feature file to train PU learning 
-                        model instead of learning from data.
-  -filter_score FILTER_SCORE
-                        The PU-score that used to filter out low quality novel
-                        isoforms. Default: 0.5.
-  -draw_auc             To draw the AUC plot or not.
-  -pos_fl_cov POS_FL_COVERAGE
-                        The minimal coverage that get the positive annotated
-                        isoforms. Default: 2.
-  -pos_min_junc_rpkm POS_MIN_JUNC_RPKM
-                        The minimal rpkm value of the junctions needed for a
-                        postive annotated isoform. Default: 0.05.
-  -select_best_model    Select the best model. If not, iFLAS will use GB.
-  -auto_filter_score    Auto determine pu_score when 'select_best_model' is
-                        selected.
+pip install -e ".[dev]"
+pytest -q
 ```
 
-### **3.6 Identification of AS events (_find_as_)**
-
-```bash
-python iflas.py find_as -cfg config.cfg
-```
-
-Usage for *find_as* function
-
-```bash
-usage: iflas.py find_as [options]
-
-optional arguments:
-  -h, --help            show this help message and exit
-  -cfg DEFAULT_CFG      The config file used for init setting.
-  -merge                Merge all samples from a same strain.
-  -pa_rpkm PARPKM       Filter the pa cluster by RPKM(PAC). Default: 0.
-  -pa_sup PA_SUPPORT    Filter the pa cluster by RPKM(PAC). Default: 5.
-  -conf_pa CONFIDENTPA  The confident PA file used for filtering the results.
-```
-
-### **3.7 Identification of differential AS events(_diff_as_)**
-
-```bash
-python iflas.py diff_as -cfg config.cfg
-```
-
-Usage for *diff_as* function
-
-```bash
-usage: iflas.py diff_as [options]
-
-optional arguments:
-  -h, --help            show this help message and exit
-  -cfg DEFAULT_CFG      The config file used for init setting.
-  -merge                Merge all samples from a same strain.
-  -bg GENE2GOFILE       The mapping file between gene and go term used for GO
-                        enrichment analysis.
-  -cutoff CUTOFF        The cutoff used to filter the output. Default: 0.05
-  -filterBy {pvalue,p.adjust}
-                        The value used to filter. Default: p.adjust.
-  -showCategory SHOWCATEGORY
-                        The number of items to show off. Default: 20.
-  -d COMPCOND           The condition file used to detect differential AS
-                        between samples.
-  -go                   Perform GO enrichment analysis for DSGs between
-                        samples.
-  -pu_filter            Get differentially spliced genes containing the
-                        isoforms filtered by PU learning.
-```
-
-### **3.8 Identification of allele-specific AS events (_asas_)**
-
-```bash
-python iflas.py asas -cfg config.cfg
-```
-
-Usage for *asas* function
-
-```bash
-usage: iflas.py asas [options]
-
-optional arguments:
-  -h, --help            show this help message and exit
-  -cfg DEFAULT_CFG      The config file used for init setting.
-  -merge                Merge all samples from a same strain.
-  -bg GENE2GOFILE       The mapping file between gene and go term used for GO
-                        enrichment analysis.
-  -cutoff CUTOFF        The cutoff used to filter the output. Default: 0.05
-  -filterBy {pvalue,p.adjust}
-                        The value used to filter. Default: p.adjust.
-  -showCategory SHOWCATEGORY
-                        The number of items to show off. Default: 20.
-  -go                   Perform GO enrichment analysis for DSGs between
-                        samples.
-  -ase                  Whether to Carry out ASE analysis.
-  -ref_fa REFFA         The reference fasta file used to be quantified in ASE.
-  -alt_fa ALTFA         The alternative fasta file used to be quantified in
-                        ASE.
-  -fbs                  Call the heterozygosity SNPs with freebayes in ASE.
-```
-
-### **3.9 Identification of differential poly(A) tail related AS events (_palen_as_)**
-
-```bash
-python iflas.py palen_as -cfg config.cfg
-```
-
-Usage for *palen_as* function
-
-```bash
-usage: iflas.py palen_as [options]
-
-optional arguments:
-  -h, --help            show this help message and exit
-  -cfg DEFAULT_CFG      The config file used for init setting.
-  -merge                Merge all samples from a same strain.
-  -bg GENE2GOFILE       The mapping file between gene and go term used for GO
-                        enrichment analysis.
-  -cutoff CUTOFF        The cutoff used to filter the output. Default: 0.05
-  -filterBy {pvalue,p.adjust}
-                        The value used to filter. Default: p.adjust.
-  -showCategory SHOWCATEGORY
-                        The number of items to show off. Default: 20.
-  -go                   Perform GO enrichment analysis for DSGs between
-                        samples.
-  -pa_sup PA_SUPPORT    The pa cluster coverage supported by flnc reads.
-                        Default: 10.
-  -conf_pac CONFIDENTPAC
-                        The confident PAC file used for filtering the results
-```
-
-### **3.10 GO enrichment analysis and visualization of candidate genes (_go_)**
-
-```bash
-python iflas.py go -cfg config.cfg -tg <gene_list> -s <> -filterby pvalue -cutoff 0.05
-```
-
-Usage for *go* function
-
-```bash
-usage: iflas.py go [options]
-
-optional arguments:
-  -h, --help            show this help message and exit
-  -cfg DEFAULT_CFG      The config file used for init setting.
-  -merge                Merge all samples from a same strain.
-  -bg GENE2GOFILE       The mapping file between gene and go term used for GO
-                        enrichment analysis.
-  -cutoff CUTOFF        The cutoff used to filter the output. Default: 0.05
-  -filterBy {pvalue,p.adjust}
-                        The value used to filter. Default: p.adjust.
-  -showCategory SHOWCATEGORY
-                        The number of items to show off. Default: 20.
-  -tg TARGETGENEFILE    The target gene file or file list separated by comma
-                        used for GO enrichment analysis.
-  -s SAMPLENAME         The sample name used plot the track, multi-sample
-                        should be separated by commma used for GO enrichment
-                        analysis.
-  -o OUTNAME            The prefix of the GO enrichment output file.
-```
-
-### **3.11 Visualization of AS events in interested genes (_visual_as_)**
-
-```bash
-python iflas.py visual_as -cfg config.cfg -g <gene_id>
-```
-
-Usage for *visual_as* function
-
-```bash
-usage: iflas.py visual_as [options]
-
-optional arguments:
-  -h, --help        show this help message and exit
-  -cfg DEFAULT_CFG  The config file used for init setting.
-  -merge            Merge all samples from a same strain.
-  -g GENES          The gene list separated by comma or a single file contain
-                    genes one per line used for visualization.
-```
-
-### **3.12 Visual integration of iFLAS analysis results (_report_)**
-
-```bash
-python iflas.py report -basic -asp -geneStruc -diff -html -cfg config.cfg
-```
-
-Usage for *report* function
-
-```bash
-usage: iflas.py report [options]
-
-optional arguments:
-  -h, --help        show this help message and exit
-  -cfg DEFAULT_CFG  The config file used for init setting.
-  -merge            Merge all samples from a same strain.
-  -all              Generate all the plots.
-  -basic            Generate basic information plots.
-  -asp              Generate AS pattern plots.
-  -geneStruc        Generate gene structure with AS events.
-  -asas             Generate allele-specific AS events.
-  -palen            Generate AS events related differential poly(A) tail
-                    length.
-  -diff             Generate the statistics for differential spliced events.
-  -html             Generate the html report for the results have been
-                    generated.
-```
-
-
-
-## 4. Testing iFLAS using maize full-length transcriptome data
-
-### 4.1 Prepare testing files
-
-We have uploaded our PacBio full-length transcriptome data for eight maize lines (B73, Chang7-2, Mo17, Huangzao4, PH207, PH4CV, PH6WC and Zheng58) into NCBI database under accession number [PRJNA64316](https://www.ncbi.hlm.nih.gov/bioproject/PROJNA776204). 
-
-Here we only use the data of B73 as an example and maize AGPv4.50 annotation files as reference configuration in *[refSection]* of [config.cfg](test_data/config.cfg) file. The required keys include: 1) *ref_genome*: maize genome fasta file, and 2) *ref_gtf*: GTF (General Transfer Format) file describing gene model. In order to simplify the operation, we only need to run *prepare.sh* to prepare testing files and configurations with one click.
-
-```
-bash prepare.sh
-```
-
-### 4.2 Testing the functions in iFLAS
-
-#### 4.2.1 Basic AS identification workflow
-
-```bash
-# Pre-processing raw PacBio and Illumina data
-python iflas.py preproc -cfg config.cfg
-
-# Map the sequencing data to reference genome
-python iflas.py mapping -cfg config.cfg -c -jcs 2
-
-# Collapse isoforms
-python iflas.py collapse -cfg config.cfg
-
-# Refine splice junction bias
-python iflas.py refine -cfg config.cfg -refine -adjust
-
-# Use PU learning to filter low-confidence isoforms
-# Minimal coverage and minimal junction rpkm are set to 2 and 0.05 to define positive isoforms.
-python iflas pu_filter -cfg config.cfg -filter_score 0.5 -pos_fl_cov 2 -pos_min_junc_rpkm 0.05
-
-# Find AS events
-python iflas.py find_as -cfg config.cfg
-```
-
-#### 4.2.2 AS event visualization
-
-```bash
-# Visualization the AS events for gene Zm00001d050245
-python iflas.py visual_as -cfg config.cfg -g Zm00001d050245
-```
-
-<img src="images\Zm00001d050245.png" alt="Zm00001d050245" style="zoom:50%;" />
-
-#### 4.2.3 GO enrichment result visualization
-
-```bash
-# Visualize the GO enrichment result for the target genes
-python iflas.py go -cfg config.cfg -td targetGene.lst -s B73
-```
-
-<img src="images\GO.png" alt="GO_test" style="zoom:40%;" />
-
-#### 4.2.4 Report all the results using HTML format
-
-The *report* function can generate the visualization results with HTML files, which can be viewed in browser.
-
-```bash
-python iflas.py report -cfg config.cfg -basic -html
-```
-
-<img src="images\report.png" alt="report" style="zoom:40%;" />
-
-
-
-### 5. Contact
-
-Please feel free to contact us: xufeng9527@cau.edu.cn
-
+The tests run iFLAS on small simulated data sets in `test_data/`, whose genes, reads and expected results are known.
+Tests that need a tool from an environment that is not installed are skipped. With all four environments the tests
+take about 17 minutes.
+
+We also checked this version on reads simulated from a real reference. `scripts/make_realref_data.py` simulates PacBio
+HiFi, nanopore direct RNA (RNA002 and RNA004) and Illumina reads from 3,000 genes of a real genome and annotation, with
+designed allele-specific splicing, allele-specific expression, differential splicing, alternative poly(A) sites and
+tail length differences. `scripts/run_realref.sh` runs iFLAS on them, and
+`IFLAS_REALREF=<run directory> pytest tests/test_realref.py` compares the results with the truth. On the MaizeGDB
+B73 v5 reference (71,435 PacBio reads, 58,744 nanopore reads and 2.4 million NGS read pairs):
+
+| Check | Result |
+| :-- | :-- |
+| Isoforms with at least 10 long reads recovered | 2,473 of 2,662 (92.9%) |
+| Expected AS events found | 3,410 of 3,706 (92.0%), plus 70 other events (2.0%) |
+| Allele-specific splicing | 42 of 60 designed genes, no other genes |
+| Allele-specific expression | 40 of 40 designed genes |
+| Poly(A) tail length differences | 39 of 50 designed genes, no other genes |
+| Alternative poly(A) sites | 79 of 80 designed genes |
+| Differential splicing (rMATS) | 27 of the 27 designed events that rMATS can define; none of the 40 genes designed without a difference; 24 events with low read counts in other genes |
+
+The whole pipeline (`iflas all -j 1` with 16 threads) took 20 minutes with a peak memory of 14.6 GB, and the report 7
+minutes. Nanopore reads are aligned to the genome FASTA, so minimap2 builds its index while aligning; on maize this
+needs about 15 GB of memory. On a computer with 32 GB of memory, please use `-j 1`.
+
+Before the fixes that change results were applied, we also compared this version with iFLAS 1 on the same simulated
+data. Given the same NGS alignments, both versions produced the same refined isoforms (154 of 154), the same PU
+features and nearly the same AS events. The few differences came from the random sampling in PU learning, which
+iFLAS 1 does not seed. When each version made its own NGS alignments, the newer HISAT2, StringTie and regtools also
+changed some junction counts.
+
+
+## 8. Notes on the methods
+
+- A5SS and A3SS events do not require the two isoforms to share the other splice site, so an event that changes both
+  the donor and the acceptor is counted as both A5SS and A3SS.
+- Mutually exclusive exons are not detected.
+- Single-exon isoforms are not included in the high-quality isoforms. Intron retention in genes with two exons (which
+  gives a single-exon isoform) is therefore not detected.
+- Splice sites up to 5 bp apart are merged by collapse (cDNA_Cupcake `max_fuzzy_junction`, default 5). Lower
+  `collapse.max_fuzzy_junction` to study such small differences, at the cost of more false isoforms from alignment
+  errors.
+- minimap2 does not recover internal exons of 9 bp or less, terminal exons of about 30 nt or less, or single introns
+  longer than `minimap2.max_intron_length`.
+- Full-length reads given in `data_processed_location` should have their poly(A) tails removed. Otherwise short
+  transcripts can be lost in collapse, which requires 90% of a read to be aligned.
+- When PacBio and nanopore libraries of one strain are merged, the merged sample is mapped with the minimap2 settings
+  of the first long-read row in samples.tsv.
+- Correcting nanopore RNA002 reads with fmlrc2 did not improve AS detection on simulated data; it can move the splice
+  sites of minor isoforms to those of the major isoform. The `use_fmlrc2` column decides whether it is used.
+- palen_as requires both a t-test and a Kruskal-Wallis test with p <= 0.001 and does not correct for multiple testing.
+  With few reads per isoform, the Kruskal-Wallis test cannot reach this level (with 5 against 5 reads the smallest
+  possible p-value is 0.008).
+- asas reports an isoform as allele-specific when one haplotype has at least 5 reads and the other at most 3, with a
+  chi-square test p <= 0.001. Only nearly exclusive allele-specific isoforms are reported.
+- diff_as selects events by rMATS FDR <= 0.05 only, without a minimum read count or a minimum change in PSI.
+- rMATS requires the flanking exons of an event to be identical. When the flanking exon is a terminal exon and the
+  isoform ends differ, some A5SS and A3SS events cannot be tested.
+
+
+## 9. Citation
+
+Xu F, Liu S, Zhao A, Shang M, Wang Q, Jiang S, Cheng Q, Chen X, Zhai X, Zhang J, Wang X, Yan J. iFLAS:
+positive-unlabeled learning facilitates full-length transcriptome-based identification and functional exploration of
+alternatively spliced isoforms in maize. New Phytologist, 2024, 241(6): 2606-2620.
+[doi:10.1111/nph.19554](https://doi.org/10.1111/nph.19554)
+
+
+## 10. Contact
+
+Please feel free to contact us at xufeng9527@cau.edu.cn, or open an issue on GitHub.

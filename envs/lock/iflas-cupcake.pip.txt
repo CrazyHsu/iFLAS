@@ -1,0 +1,2 @@
+networkx==3.4.2
+pyvcf3==1.0.4

@@ -1,0 +1,5 @@
+sample_name	project_name	ref_strain	strain	condition	replicate	tgs_plat	strategy	data_location	data_processed_location	primer	ngs_left_reads	ngs_right_reads	ngs_reads_paired	ngs_reads_length	use_fmlrc2
+condA_rep1	synv2	SYN	SYN	condA	rep1	pacbio	sequel	None	flnc.fa	primer.fa	ngs/condA_rep1_R1.fastq.gz	ngs/condA_rep1_R2.fastq.gz	paired	150	false
+condA_rep2	synv2	SYN	SYN	condA	rep2	None	None	None	None	None	ngs/condA_rep2_R1.fastq.gz	ngs/condA_rep2_R2.fastq.gz	paired	150	false
+condB_rep1	synv2	SYN	SYN	condB	rep1	None	None	None	None	None	ngs/condB_rep1_R1.fastq.gz	ngs/condB_rep1_R2.fastq.gz	paired	150	false
+condB_rep2	synv2	SYN	SYN	condB	rep2	None	None	None	None	None	ngs/condB_rep2_R1.fastq.gz	ngs/condB_rep2_R2.fastq.gz	paired	150	false

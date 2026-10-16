@@ -1,0 +1,78 @@
+event_id	type	gene	chrom	strand	start	end	inc_isoforms	exc_isoforms	lr_psi	expected_detection	expected_confident	note
+seA:SE:3400-3550	SE	seA	chr1	+	3400	3550	seA.full	seA.skip	0.625	yes	yes	skips exon 1
+seB:SE:6900-7020	SE	seB	chr1	-	6900	7020	seB.full	seB.skip	0.5	yes	yes	skips exon 1
+seC:SE:10080-10600	SE	seC	chr1	+	10080	10600	seC.full	seC.skip	0.583	yes	yes	skips exon(s) 1-2
+seD:SE:13670-13800	SE	seD	chr1	-	13670	13800	seD.full	seD.skip1	0.692	yes	yes	skips exon 1
+seD:SE:14600-14740	SE	seD	chr1	-	14600	14740	seD.full	seD.skip2	0.75	yes	yes	skips exon 2
+irA:IR:16850-17250	IR	irA	chr1	+	16850	17250	irA.ir	irA.full	0.5	yes	yes	
+irB:IR:20260-20680	IR	irB	chr1	-	20260	20680	irB.ir	irB.full	0.429	yes	yes	
+irC:IR:22860-23160	IR	irC	chr1	+	22860	23160	irC.ir	irC.full	0.4	yes	yes	
+irD:IR:25270-25590	IR	irD	chr1	-	25270	25590	irD.ir	irD.full	0.5	yes	yes	
+a5A:A5SS:28280-28310	A5SS	a5A	chr1	+	28280	28310	a5A.alt	a5A.full	0.4	yes	yes	site shift +30 bp
+a5B:A5SS:31480-31540	A5SS	a5B	chr1	-	31480	31540	a5B.alt	a5B.full	0.385	yes	yes	site shift -60 bp
+a5C:A5SS:33860-33863	A5SS	a5C	chr1	+	33860	33863	a5C.alt	a5C.full	0.5	no:offset	no:offset	site shift +3 bp
+a3A:A3SS:37130-37160	A3SS	a3A	chr1	+	37130	37160	a3A.alt	a3A.full	0.286	yes	yes	site shift -30 bp
+a3B:A3SS:39580-39640	A3SS	a3B	chr1	-	39580	39640	a3B.alt	a3B.full	0.5	yes	yes	site shift +60 bp
+a3C:A3SS:42717-42720	A3SS	a3C	chr1	+	42717	42720	a3C.alt	a3C.full	0.5	no:offset	no:offset	site shift -3 bp
+mxeA:MXE:45470-46070	MXE	mxeA	chr1	+	45470	46070	mxeA.mxe1	mxeA.mxe2	0.5	no:MXE-unsupported	no:MXE-unsupported	mutually exclusive exons
+mxeB:MXE:48610-49230	MXE	mxeB	chr1	-	48610	49230	mxeB.mxe1	mxeB.mxe2	0.5	no:MXE-unsupported	no:MXE-unsupported	mutually exclusive exons
+cpxA:A5SS:51430-51470	A5SS	cpxA	chr1	+	51430	51470	cpxA.cpx	cpxA.full	0.429	both:A5SS+A3SS	yes	complex event: donor and acceptor both differ
+cpxA:A3SS:51790-51830	A3SS	cpxA	chr1	+	51790	51830	cpxA.cpx	cpxA.full	0.429	both:A5SS+A3SS	yes	complex event: donor and acceptor both differ
+cpxB:A3SS:54260-54295	A3SS	cpxB	chr1	-	54260	54295	cpxB.cpx	cpxB.full	0.429	both:A5SS+A3SS	yes	complex event: donor and acceptor both differ
+cpxB:A5SS:54635-54680	A5SS	cpxB	chr1	-	54635	54680	cpxB.cpx	cpxB.full	0.429	both:A5SS+A3SS	yes	complex event: donor and acceptor both differ
+irseA:IR:58070-58520	IR	irseA	chr1	+	58070	58520	irseA.ir	irseA.full	0.333	yes	yes	
+irseA:SE:57420-57570	SE	irseA	chr1	+	57420	57570	irseA.full	irseA.skip	0.714	yes	yes	skips exon 1
+longA:SE:82140-82340	SE	longA	chr1	+	82140	82340	longA.full	longA.skip	0.6	yes	yes	skips exon 1
+longB:A3SS:84450-84480	A3SS	longB	chr1	-	84450	84480	longB.alt	longB.full	0.4	yes	yes	site shift +30 bp
+wobbleA:A5SS:103880-103883	A5SS	wobbleA	chr1	+	103880	103883	wobbleA.wob	wobbleA.full	0.231	no:offset	no:offset	alignment-wobble isoform (+3 bp); LR-only, NGS confident filter should drop it
+wobbleB:A5SS:107163-107170	A5SS	wobbleB	chr1	-	107163	107170	wobbleB.wob	wobbleB.full	0.25	yes	no:ngs-unsupported	alignment-wobble isoform (-7 bp); LR-only, NGS confident filter should drop it
+wobbleC:A3SS:110010-110020	A3SS	wobbleC	chr1	+	110010	110020	wobbleC.wob	wobbleC.full	0.25	yes	no:ngs-unsupported	alignment-wobble isoform (+10 bp); LR-only, NGS confident filter should drop it
+lowA:SE:112830-113030	SE	lowA	chr1	+	112830	113030	lowA.full	lowA.skip	0.889	no:junc-filter	no:junc-filter	skips exon 1; lowA.skip fail:chain-support (legacy mapping junction-combination filter removes its reads)
+lowB:SE:115570-115760	SE	lowB	chr1	-	115570	115760	lowB.full	lowB.skip	0.714	no:junc-filter	no:junc-filter	skips exon 1; lowB.skip fail:consensus (legacy mapping junction-combination filter removes its reads)
+nullA:SE:118340-118500	SE	nullA	chr1	+	118340	118500	nullA.full	nullA.skip	0.5	yes	yes	skips exon 1
+nullB:SE:121040-121210	SE	nullB	chr1	-	121040	121210	nullB.full	nullB.skip	0.5	yes	yes	skips exon 1
+diA:IR:8500-9000	IR	diA	chr2	+	8500	9000	diA.ir	diA.full	0.385	no:R-2	no:R-2	retention isoform is mono-exon
+microA:SE:13700-13730	SE	microA	chr2	+	13700	13730	microA.full	microA.skip	0.667	yes	yes	skips exon 1
+microB:SE:16220-16229	SE	microB	chr2	-	16220	16229	microB.full	microB.skip	0.667	no:aligner-microexon	no:aligner-microexon	skips exon 1
+microC:SE:18709-18724	SE	microC	chr2	+	18709	18724	microC.full	microC.skip	0.667	yes	yes	skips exon 1
+antiA:SE:21374-21574	SE	antiA	chr2	+	21374	21574	antiA.full	antiA.skip	0.667	yes	yes	skips exon 1
+nearA:SE:27204-27404	SE	nearA	chr2	+	27204	27404	nearA.full	nearA.skip	0.667	yes	yes	skips exon 1
+gcagA:SE:34424-34624	SE	gcagA	chr2	-	34424	34624	gcagA.full	gcagA.skip	0.667	yes	yes	skips exon 1
+asasA:SE:40004-40184	SE	asasA	chr2	+	40004	40184	asasA.full	asasA.skip	0.545	yes	yes	skips exon 1
+asasB:SE:42754-42924	SE	asasB	chr2	-	42754	42924	asasB.full	asasB.skip	0.545	yes	yes	skips exon 1
+asasC:SE:45534-45694	SE	asasC	chr2	+	45534	45694	asasC.full	asasC.skip	0.545	yes	yes	skips exon 1
+asasD:SE:48334-48484	SE	asasD	chr2	-	48334	48484	asasD.full	asasD.skip	0.545	yes	yes	skips exon 1
+asasN1:SE:51104-51274	SE	asasN1	chr2	+	51104	51274	asasN1.full	asasN1.skip	0.545	yes	yes	skips exon 1
+asasN2:SE:53834-53994	SE	asasN2	chr2	-	53834	53994	asasN2.full	asasN2.skip	0.545	yes	yes	skips exon 1
+teA:SE:57564-57764	SE	teA	chr2	+	57564	57764	teA.full	teA.skip	0.667	yes	yes	skips exon 1
+endA:SE:3400-3600	SE	endA	chr4	+	3400	3600	endA.full	endA.skip	0.667	yes	yes	skips exon 1
+genePU01:SE:2200-2320	SE	genePU01	chr3	+	2200	2320	genePU01.full	genePU01.novel	0.6	yes	yes	skips exon 1
+genePU02:SE:3380-3500	SE	genePU02	chr3	-	3380	3500	genePU02.full	genePU02.novel	0.593	yes	yes	skips exon 1
+genePU03:A5SS:4380-4400	A5SS	genePU03	chr3	+	4380	4400	genePU03.novel	genePU03.full	0.5	yes	yes	site shift +20 bp
+genePU04:SE:5740-5860	SE	genePU04	chr3	-	5740	5860	genePU04.full	genePU04.novel	0.095	yes	yes	skips exon 1
+genePU05:SE:6920-7040	SE	genePU05	chr3	+	6920	7040	genePU05.full	genePU05.novel	0.9	yes	yes	skips exon 1
+genePU06:A3SS:7920-7940	A3SS	genePU06	chr3	-	7920	7940	genePU06.novel	genePU06.full	0.538	yes	yes	site shift +20 bp
+genePU07:SE:9280-9400	SE	genePU07	chr3	+	9280	9400	genePU07.full	genePU07.novel	0.52	yes	yes	skips exon 1
+genePU08:SE:10460-10580	SE	genePU08	chr3	-	10460	10580	genePU08.full	genePU08.novel	0.105	yes	yes	skips exon 1
+genePU09:A5SS:11460-11480	A5SS	genePU09	chr3	+	11460	11480	genePU09.novel	genePU09.full	0.556	yes	yes	site shift +20 bp
+genePU10:SE:12820-12940	SE	genePU10	chr3	-	12820	12940	genePU10.full	genePU10.novel	0.833	yes	yes	skips exon 1
+genePU11:SE:14000-14120	SE	genePU11	chr3	+	14000	14120	genePU11.full	genePU11.novel	0.273	yes	yes	skips exon 1
+genePU12:A3SS:15000-15020	A3SS	genePU12	chr3	-	15000	15020	genePU12.novel	genePU12.full	0.882	yes	yes	site shift +20 bp
+genePU13:SE:16360-16480	SE	genePU13	chr3	+	16360	16480	genePU13.full	genePU13.novel	0.739	yes	yes	skips exon 1
+genePU14:SE:17540-17660	SE	genePU14	chr3	-	17540	17660	genePU14.full	genePU14.novel	0.312	yes	yes	skips exon 1
+genePU15:A5SS:18540-18560	A5SS	genePU15	chr3	+	18540	18560	genePU15.novel	genePU15.full	0.25	yes	yes	site shift +20 bp
+genePU16:SE:19900-20020	SE	genePU16	chr3	-	19900	20020	genePU16.full	genePU16.novel	0.091	yes	yes	skips exon 1
+genePU17:SE:21080-21200	SE	genePU17	chr3	+	21080	21200	genePU17.full	genePU17.novel	0.778	yes	yes	skips exon 1
+genePU18:A3SS:22080-22100	A3SS	genePU18	chr3	-	22080	22100	genePU18.novel	genePU18.full	0.333	yes	yes	site shift +20 bp
+genePU19:SE:23440-23560	SE	genePU19	chr3	+	23440	23560	genePU19.full	genePU19.novel	0.143	yes	yes	skips exon 1
+genePU20:SE:24620-24740	SE	genePU20	chr3	-	24620	24740	genePU20.full	genePU20.novel	0.1	yes	yes	skips exon 1
+genePU21:A5SS:25620-25640	A5SS	genePU21	chr3	+	25620	25640	genePU21.novel	genePU21.full	0.385	yes	yes	site shift +20 bp
+genePU22:SE:26980-27100	SE	genePU22	chr3	-	26980	27100	genePU22.full	genePU22.novel	0.571	yes	yes	skips exon 1
+genePU23:SE:28160-28280	SE	genePU23	chr3	+	28160	28280	genePU23.full	genePU23.novel	0.579	yes	yes	skips exon 1
+genePU24:A3SS:29160-29180	A3SS	genePU24	chr3	-	29160	29180	genePU24.novel	genePU24.full	0.889	yes	yes	site shift +20 bp
+genePU25:SE:30520-30640	SE	genePU25	chr3	+	30520	30640	genePU25.full	genePU25.novel	0.5	yes	yes	skips exon 1
+genePU26:SE:31700-31820	SE	genePU26	chr3	-	31700	31820	genePU26.full	genePU26.novel	0.542	yes	yes	skips exon 1
+genePU27:A5SS:32700-32720	A5SS	genePU27	chr3	+	32700	32720	genePU27.novel	genePU27.full	0.167	yes	yes	site shift +20 bp
+genePU28:SE:34060-34180	SE	genePU28	chr3	-	34060	34180	genePU28.full	genePU28.novel	0.125	yes	yes	skips exon 1
+genePU29:SE:35240-35360	SE	genePU29	chr3	+	35240	35360	genePU29.full	genePU29.novel	0.882	yes	yes	skips exon 1
+genePU30:A3SS:36240-36260	A3SS	genePU30	chr3	-	36240	36260	genePU30.novel	genePU30.full	0.7	yes	yes	site shift +20 bp

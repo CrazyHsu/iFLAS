@@ -117,7 +117,7 @@ alphaT = 'Alpha'
 colorT = 'Color'
 fillT = 'Fill'
 linetypeT = 'Line Type'
-shape = 'Shape'
+shapeT = 'Shape'   # was `shape`, which made every plot pass shape = 'Shape' to geom_boxplot (BUG-165)
 sizeT = 'Size'
 weightT = 'Weight'
 lgTtlS = 15

@@ -1,0 +1,11 @@
+event_id	gene	condA_psi	condB_psi	delta	expected_significant
+seA:SE:3400-3550	seA	0.8	0.2	0.6	1
+seC:SE:10080-10600	seC	0.7	0.3	0.4	1
+irB:IR:20260-20680	irB	0.6	0.4	0.2	1
+a5B:A5SS:31480-31540	a5B	0.8	0.2	0.6	1
+a3A:A3SS:37130-37160	a3A	0.7	0.3	0.4	1
+cpxA:A5SS:51430-51470	cpxA	0.6	0.4	0.2	1
+cpxA:A3SS:51790-51830	cpxA	0.6	0.4	0.2	1
+nullA:SE:118340-118500	nullA	0.5	0.5	0.0	0
+nullB:SE:121040-121210	nullB	0.5	0.5	0.0	0
+asasA:SE:40004-40184	asasA	0.55	0.55	0.0	0

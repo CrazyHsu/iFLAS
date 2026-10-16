@@ -1,0 +1,25 @@
+# iFLAS synthetic v2 config (paths relative to this file). Reference aux files are derived by
+# `iflas init-ref -f genome.fa --gtf genes.gtf -o ref/`; tests/test_synthetic_v2.py fills them in.
+reference:
+  - ref_strain: SYN
+    ref_genome: genome.fa
+    ref_gtf: genes.gtf
+ccs:
+  min_pass: 2
+  min_predicted_accuracy: 0.9
+minimap2:
+  max_intron_length: 50000
+  junc_comb_support: 2
+collapse:
+  min_identity: 0.9
+  min_coverage: 0.9
+pu_filter:
+  filter_score: 0.5
+  pos_fl_coverage: 2
+  pos_min_junc_rpkm: 0.05
+options:
+  threads: 4
+  memory: 8000M
+  merge_data_from_same_strain: true
+dirs:
+  out_dir: iflas_out

@@ -1,0 +1,17 @@
+# Isolated env for cDNA_Cupcake (the `collapse` stage).
+#   conda env create -f environment-cupcake.yml
+# Why separate: bioconda cdna_cupcake pins Python 3.10, so it cannot live in the
+# Python 3.11 core env. iFLAS runs `collapse_isoforms_by_sam.py` and IsoPhase inside this env
+# (iFLAS activates it for these calls). Exact builds: envs/lock/iflas-cupcake.linux-64.txt.
+name: iflas-cupcake
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - "numpy<1.24"   # cdna_cupcake 29's compiled Cython uses np.int (removed in numpy 1.24)
+  - "cdna_cupcake>=29,<30"   # collapse output names / IsoPhase CLI as of cupcake 29
+  - "samtools>=1.17,<2"
+  - "networkx>=3,<4"   # IsoPhase (run_phaser.py) imports it; missing from the cdna_cupcake package metadata
+  - pip
+  - pip:
+      - "pyvcf3>=1.0,<2"        # IsoPhase imports `vcf` (PyVCF is Python-2 only; pyvcf3 is the maintained fork)

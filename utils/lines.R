@@ -383,7 +383,7 @@ if(exists('noGgplot')){
         data = rbind(data, newData)
     }
     p = ggplot(data, aes(x = V1, y = V2, color = Group)) + guides(color = guide_legend(title = myLegendTitle))
-    myCmd = 'p = p + geom_line(show_guide = showGuide'
+    myCmd = 'p = p + geom_line(show.legend = showGuide'
     if(exists('myAlpha')) myCmd = paste0(myCmd, ', alpha = myAlpha')
     if(exists('color')) myCmd = paste0(myCmd, ', color = color')
     if(exists('size')) myCmd = paste0(myCmd, ', size = size')

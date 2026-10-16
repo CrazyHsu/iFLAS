@@ -1,0 +1,7 @@
+gene	hapA_reads	hapB_reads	hapA_share	expected_imbalanced
+asasA	20	24	0.455	0
+asasB	20	24	0.455	0
+asasC	20	24	0.455	0
+asasD	20	24	0.455	0
+asasN1	22	22	0.5	0
+asasN2	37	7	0.841	1

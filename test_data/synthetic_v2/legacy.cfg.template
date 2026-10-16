@@ -1,0 +1,75 @@
+[refSection]
+section_type = refSection
+ref_strain = SYN
+ref_genome = {V2}/genome.fa
+ref_size = {V2}/ref/genome.len.txt
+ref_gtf = {V2}/genes.gtf
+ref_gff = None
+ref_gpe = {V2}/ref/genome.gpe
+ref_bed = {V2}/ref/genome.bed
+ref_mm2_index = {V2}/ref/genome.mm2
+hisat2_index = {V2}/ref/genome_hisat2
+
+[condA_rep1]
+section_type = dataCfg
+project_name = synv2
+sample_name = condA_rep1
+ref_strain = SYN
+strain = SYN
+condition = condA
+tgs_plat = pacbio
+strategy = sequel
+data_location = None
+primer = {V2}/primer.fa
+data_processed_location = {V2}/flnc.fa
+polya_location = None
+ngs_left_reads = {V2}/ngs/condA_rep1_R1.fastq.gz
+ngs_right_reads = {V2}/ngs/condA_rep1_R2.fastq.gz
+ngs_reads_paired = paired
+ngs_reads_length = 150
+ngs_junctions = None
+ngs_library_strand = 0
+use_fmlrc2 = False
+single_run_threads = 4
+
+[ccsCalling]
+section_type = ccsCalling
+min_read_score = 0.75
+min_subread_length = 50
+min_ccs_length = 50
+min_predicted_accuracy = 0.9
+min_pass = 2
+
+[minimap2]
+section_type = minimap2
+mm2_index = None
+max_intron_length = 50000
+
+[collapse]
+section_type = collapse
+min_identity = 0.9
+min_coverage = 0.9
+max_5_diff = 1000
+max_3_diff = 500
+fl_coverage = 2
+max_fuzzy_junction = 5
+dun_merge_5_shorter = True
+
+[pu_filter]
+section_type = pu_filter
+filter_score = 0.5
+draw_auc = False
+pos_fl_coverage = 2
+pos_min_junc_rpkm = 0.05
+
+[optionTools]
+section_type = optionTools
+threads = 4
+memory = 8G
+merge_data_from_same_strain = False
+gene2go = None
+
+[dirs]
+section_type = dirs
+out_dir = {V2}/legacy_out
+tmp_dir = {V2}/legacy_tmp

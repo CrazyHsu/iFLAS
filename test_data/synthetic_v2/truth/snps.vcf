@@ -1,0 +1,22 @@
+##fileformat=VCFv4.2
+##INFO=<ID=GENE,Number=1,Type=String,Description="gene">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
+chr2	39323	asasA_snp1	T	G	60	PASS	GENE=asasA
+chr2	40076	asasA_snp2	T	C	60	PASS	GENE=asasA
+chr2	40644	asasA_snp3	T	C	60	PASS	GENE=asasA
+chr2	42304	asasB_snp4	C	T	60	PASS	GENE=asasB
+chr2	43364	asasB_snp5	A	C	60	PASS	GENE=asasB
+chr2	43550	asasB_snp6	A	T	60	PASS	GENE=asasB
+chr2	44898	asasC_snp7	T	C	60	PASS	GENE=asasC
+chr2	45062	asasC_snp8	A	G	60	PASS	GENE=asasC
+chr2	45624	asasC_snp9	A	T	60	PASS	GENE=asasC
+chr2	46354	asasC_snp10	G	A	60	PASS	GENE=asasC
+chr2	47605	asasD_snp11	T	A	60	PASS	GENE=asasD
+chr2	47787	asasD_snp12	G	A	60	PASS	GENE=asasD
+chr2	48453	asasD_snp13	A	G	60	PASS	GENE=asasD
+chr2	50484	asasN1_snp14	T	G	60	PASS	GENE=asasN1
+chr2	50631	asasN1_snp15	T	C	60	PASS	GENE=asasN1
+chr2	51232	asasN1_snp16	C	A	60	PASS	GENE=asasN1
+chr2	53909	asasN2_snp17	A	C	60	PASS	GENE=asasN2
+chr2	54430	asasN2_snp18	C	T	60	PASS	GENE=asasN2
+chr2	54589	asasN2_snp19	T	A	60	PASS	GENE=asasN2

@@ -1,0 +1,17 @@
+# Isolated PacBio Iso-Seq environment.
+#   conda env create -f environment-pacbio.yml
+# Why separate: pbcoretools (provides `dataset`) only ships python<=3.7 builds, so it
+# cannot live in the Python 3.11 iFLAS core env. These are standalone binaries; iFLAS
+# (in the core env) runs them inside this env. Exact builds: envs/lock/iflas-pacbio.linux-64.txt.
+# Python version is left unpinned so the solver can pick a compatible one (~3.7).
+name: iflas-pacbio
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - "pbccs>=6.4,<7"        # ccs (6.x flags: --min-passes/--min-length/--min-rq)
+  - "isoseq>=4"            # isoseq refine/cluster/collapse (v4; binary, renamed from isoseq3)
+  - "lima>=2.9"            # primer/barcode demux
+  - "pbbam>=2.4,<3"        # pbindex for subreads BAMs without .pbi (BUG-158)
+  - "pbcoretools>=0.8,<1"  # `dataset` (subreadset.xml creation)
+  # - bax2bam    # legacy RSII (.bax.h5) only; uncomment if you have RSII data
